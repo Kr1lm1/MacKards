@@ -16,13 +16,19 @@ struct PieMenuContentView: View {
     
     var body: some View {
         pieBody
-            .onAppear {
-                for i in 0..<total {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * 0.015) {
-                        withAnimation(.spring(response: 0.18, dampingFraction: 0.75)) { shown = i + 1 }
-                    }
-                }
-            }
+            .onAppear { startAnimation() }
+    }
+    
+    // Single timer drives the staggered reveal
+    private func startAnimation() {
+        let count = total
+        let interval: Double = 0.015
+        var i = 0
+        Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { timer in
+            i += 1
+            withAnimation(.spring(response: 0.18, dampingFraction: 0.75)) { shown = i }
+            if i >= count { timer.invalidate() }
+        }
     }
     
     private var pieBody: some View {
@@ -49,21 +55,22 @@ struct PieMenuContentView: View {
         let sliceShape = PieSliceShape(narrowFactor: 0.55, rotation: ang + 90)
         
         return ZStack {
-            // Background card shape
+            // Solid translucent background (no blur = no GPU cost)
             sliceShape
-                .fill(.ultraThinMaterial)
+                .fill(Color(nsColor: .windowBackgroundColor).opacity(0.82))
                 .frame(width: card, height: card)
             
             // Border
             sliceShape
-                .stroke(Color.white.opacity(0.3), lineWidth: 0.5)
+                .stroke(Color.white.opacity(0.25), lineWidth: 0.5)
                 .frame(width: card, height: card)
             
-            // Content on top
+            // Content
             cardContent(i, size: card)
                 .frame(width: card, height: card)
         }
         .frame(width: card, height: card)
+        .shadow(color: .black.opacity(0.15), radius: 8, y: 2)
         .contentShape(sliceShape)
         .onTapGesture { trigger(i) }
         .onHover { setHover(i, $0) }
