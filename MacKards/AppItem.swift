@@ -17,24 +17,19 @@ final class AppFinder {
     private init() {}
     
     func getApps() -> [AppItem] {
-        if Date().timeIntervalSince(cacheTime) > 60 || cache.isEmpty { refresh() }
+        if Date().timeIntervalSince(cacheTime) > 120 || cache.isEmpty { refresh() }
         return cache
-    }
-    
-    func getFrequentApps(limit: Int) -> [AppItem] {
-        Array(getApps().prefix(limit))
     }
     
     private func refresh() {
         let fm = FileManager.default
-        let dirs = ["/Applications", "/System/Applications", "/System/Applications/Utilities",
-                    NSHomeDirectory() + "/Applications"]
         var result: [AppItem] = []
-        for dir in dirs {
+        for dir in ["/Applications", "/System/Applications", "/System/Applications/Utilities"] {
             guard let items = try? fm.contentsOfDirectory(atPath: dir) else { continue }
             for item in items where item.hasSuffix(".app") {
-                let url = URL(fileURLWithPath: dir + "/" + item)
-                let icon = NSWorkspace.shared.icon(forFile: url.path)
+                let path = dir + "/" + item
+                let url = URL(fileURLWithPath: path)
+                let icon = NSWorkspace.shared.icon(forFile: path)
                 icon.size = NSSize(width: 48, height: 48)
                 result.append(AppItem(id: url, name: String(item.dropLast(4)), url: url, icon: icon))
             }

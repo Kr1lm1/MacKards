@@ -12,28 +12,43 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         if let btn = statusItem.button {
-            btn.image = NSImage(systemSymbolName: "menucard.fill", accessibilityDescription: "MacKards")
+            btn.image = NSImage(systemSymbolName: "rectangle.portrait.on.rectangle.portrait.angled.fill", accessibilityDescription: "MacKards")
         }
+        updateMenu()
+        
+        pieMenu = PieMenuController()
+        registerMonitors()
+        
+        NotificationCenter.default.addObserver(forName: .openSettings, object: nil, queue: .main) { [weak self] _ in
+            self?.openSettings()
+        }
+        NotificationCenter.default.addObserver(forName: .settingsChanged, object: nil, queue: .main) { [weak self] _ in
+            self?.registerMonitors()
+            self?.updateMenu()
+        }
+    }
+    
+    private func updateMenu() {
         let menu = NSMenu()
-        menu.addItem(NSMenuItem(title: "Hold ⌘⌥ to open", action: nil, keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: "Hold \(AppSettings.shared.hotkeyLabel) to open", action: nil, keyEquivalent: ""))
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Settings...", action: #selector(openSettings), keyEquivalent: ","))
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         statusItem.menu = menu
+    }
+    
+    private func registerMonitors() {
+        if let m = globalMonitor { NSEvent.removeMonitor(m) }
+        if let m = localMonitor { NSEvent.removeMonitor(m) }
+        holding = false
         
-        pieMenu = PieMenuController()
-        
-        NotificationCenter.default.addObserver(forName: .openSettings, object: nil, queue: .main) { [weak self] _ in
-            self?.openSettings()
-        }
-        
-        let cmdOpt: NSEvent.ModifierFlags = [.command, .option]
+        let target = AppSettings.shared.hotkeyModifiers
         globalMonitor = NSEvent.addGlobalMonitorForEvents(matching: .flagsChanged) { [weak self] e in
-            self?.checkFlags(e.modifierFlags, cmdOpt)
+            self?.checkFlags(e.modifierFlags, target)
         }
         localMonitor = NSEvent.addLocalMonitorForEvents(matching: .flagsChanged) { [weak self] e in
-            self?.checkFlags(e.modifierFlags, cmdOpt)
+            self?.checkFlags(e.modifierFlags, target)
             return e
         }
     }
@@ -48,9 +63,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if let w = settingsWindow, w.isVisible {
             w.makeKeyAndOrderFront(nil); NSApp.activate(ignoringOtherApps: true); return
         }
-        let w = NSWindow(contentRect: .init(x: 0, y: 0, width: 480, height: 420),
+        let w = NSWindow(contentRect: .init(x: 0, y: 0, width: 520, height: 480),
                          styleMask: [.titled, .closable, .miniaturizable], backing: .buffered, defer: false)
-        w.center(); w.title = "MacKards Settings"
+        w.center(); w.title = "MacKards"
         w.isReleasedWhenClosed = false
         w.contentView = NSHostingView(rootView: SettingsView())
         w.makeKeyAndOrderFront(nil)
