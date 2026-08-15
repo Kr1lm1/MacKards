@@ -56,6 +56,7 @@ struct SettingsView: View {
                 section("Display", "eye") {
                     Toggle("Show Labels", isOn: $settings.showLabels).toggleStyle(.switch)
                     Toggle("Show Actions", isOn: $settings.showActions).toggleStyle(.switch)
+                    Toggle("Haptic Feedback", isOn: $settings.haptics).toggleStyle(.switch)
                 }
                 if settings.showActions {
                     section("Actions", "bolt.fill") {

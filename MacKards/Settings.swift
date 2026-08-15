@@ -10,6 +10,7 @@ final class AppSettings: ObservableObject {
     @Published var appCount: Int { didSet { d.set(appCount, forKey: "ac"); notify() } }
     @Published var showLabels: Bool { didSet { d.set(showLabels, forKey: "sl") } }
     @Published var showActions: Bool { didSet { d.set(showActions, forKey: "sa") } }
+    @Published var haptics: Bool { didSet { d.set(haptics, forKey: "hp") } }
     @Published var enabledActions: [String] { didSet { d.set(enabledActions, forKey: "ea"); notify() } }
     @Published var pinnedAppPaths: [String] { didSet { d.set(pinnedAppPaths, forKey: "pa"); notify() } }
     
@@ -21,12 +22,13 @@ final class AppSettings: ObservableObject {
         let ac = d.integer(forKey: "ac"); appCount = ac > 0 ? ac : 8
         showLabels = d.object(forKey: "sl") == nil ? true : d.bool(forKey: "sl")
         showActions = d.object(forKey: "sa") == nil ? true : d.bool(forKey: "sa")
+        haptics = d.object(forKey: "hp") == nil ? true : d.bool(forKey: "hp")
         enabledActions = d.stringArray(forKey: "ea") ?? ["downloads", "documents", "desktop", "applications"]
         pinnedAppPaths = d.stringArray(forKey: "pa") ?? Self.defaultApps()
     }
     
     func resetToDefaults() {
-        radius = 130; cardSize = 72; appCount = 8; showLabels = true; showActions = true
+        radius = 130; cardSize = 72; appCount = 8; showLabels = true; showActions = true; haptics = true
         enabledActions = ["downloads", "documents", "desktop", "applications"]
         pinnedAppPaths = Self.defaultApps()
     }

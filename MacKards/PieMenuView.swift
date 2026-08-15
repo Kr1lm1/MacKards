@@ -124,11 +124,15 @@ struct PieMenuContentView: View {
     }
     
     private func setHover(_ i: Int, _ on: Bool) {
+        let prev = hovered
         hovered = on ? i : nil
         let s = PieMenuState.shared
         if on {
             if i < apps.count { s.hoveredApp = apps[i]; s.hoveredAction = nil }
             else { s.hoveredApp = nil; s.hoveredAction = actions[i - apps.count] }
+            if prev != i && settings.haptics {
+                NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .now)
+            }
         } else { s.hoveredApp = nil; s.hoveredAction = nil }
     }
 }
