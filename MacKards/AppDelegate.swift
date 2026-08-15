@@ -12,7 +12,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         if let btn = statusItem.button {
-            btn.image = NSImage(systemSymbolName: "squares.leading.rectangle", accessibilityDescription: "MacKards")
+            btn.image = NSImage(systemSymbolName: "menucard.fill", accessibilityDescription: "MacKards")
         }
         let menu = NSMenu()
         menu.addItem(NSMenuItem(title: "Hold ⌘⌥ to open", action: nil, keyEquivalent: ""))

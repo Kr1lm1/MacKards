@@ -55,9 +55,9 @@ struct PieMenuContentView: View {
         let sliceShape = PieSliceShape(narrowFactor: 0.55, rotation: ang + 90)
         
         return ZStack {
-            // Solid translucent background (no blur = no GPU cost)
+            // Blurred background
             sliceShape
-                .fill(Color(nsColor: .windowBackgroundColor).opacity(0.82))
+                .fill(.ultraThinMaterial)
                 .frame(width: card, height: card)
             
             // Border
@@ -70,7 +70,6 @@ struct PieMenuContentView: View {
                 .frame(width: card, height: card)
         }
         .frame(width: card, height: card)
-        .shadow(color: .black.opacity(0.15), radius: 8, y: 2)
         .contentShape(sliceShape)
         .onTapGesture { trigger(i) }
         .onHover { setHover(i, $0) }

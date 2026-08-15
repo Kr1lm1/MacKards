@@ -150,7 +150,7 @@ struct SettingsView: View {
     private var aboutTab: some View {
         VStack(spacing: 16) {
             Spacer()
-            Image(systemName: "squares.leading.rectangle").font(.system(size: 48))
+            Image(systemName: "menucard.fill").font(.system(size: 48))
                 .foregroundStyle(.linearGradient(colors: [.blue, .purple], startPoint: .topLeading, endPoint: .bottomTrailing))
             Text("MacKards").font(.system(size: 20, weight: .semibold))
             Text("v1.0").font(.system(size: 12)).foregroundColor(.secondary)
