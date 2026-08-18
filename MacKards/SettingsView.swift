@@ -98,11 +98,9 @@ struct SettingsView: View {
                     slider("Anim Speed", $settings.animSpeed, 0.5...3.0, 0.25, "%.1fx")
                 }
                 
-                // Options
-                section("Options", "slider.horizontal.3") {
+                // Opening Animation
+                section("Opening Animation", "play.rectangle.fill") {
                     HStack {
-                        Text("Open Animation").font(.system(size: 11))
-                        Spacer()
                         Picker("", selection: $settings.openAnim) {
                             Text("Stagger").tag(0)
                             Text("Scale").tag(1)
@@ -110,8 +108,12 @@ struct SettingsView: View {
                             Text("Bounce").tag(3)
                         }
                         .pickerStyle(.segmented)
-                        .frame(width: 220)
+                        Spacer()
                     }
+                }
+                
+                // Options
+                section("Options", "slider.horizontal.3") {
                     optionRow("Labels", $settings.showLabels)
                     optionRow("Folders", $settings.showActions)
                     optionRow("Haptics", $settings.haptics)

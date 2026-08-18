@@ -36,23 +36,24 @@ struct PieMenuContentView: View {
             shown = n; ringVis = true; menuScale = 1; menuOpacity = 1
             return
         }
+        let base = 0.22 / max(spd, 0.2)
         switch settings.openAnim {
         case 1: // scale
             shown = n; ringVis = true
-            withAnimation(.spring(response: 0.28, dampingFraction: 0.75)) { menuScale = 1; menuOpacity = 1 }
+            withAnimation(.spring(response: base, dampingFraction: 0.8)) { menuScale = 1; menuOpacity = 1 }
         case 2: // fade
             shown = n; ringVis = true
-            withAnimation(.easeOut(duration: 0.28)) { menuScale = 1; menuOpacity = 1 }
+            withAnimation(.easeOut(duration: base * 1.3)) { menuScale = 1; menuOpacity = 1 }
         case 3: // bounce
             shown = n; ringVis = true
-            withAnimation(.interpolatingSpring(stiffness: 180, damping: 8)) { menuScale = 1; menuOpacity = 1 }
+            withAnimation(.spring(response: base * 1.6, dampingFraction: 0.55)) { menuScale = 1; menuOpacity = 1 }
         default: // stagger
-            withAnimation(.spring(response: 0.2, dampingFraction: 0.75)) { ringVis = true }
+            withAnimation(.spring(response: 0.18 / max(spd, 0.2), dampingFraction: 0.75)) { ringVis = true }
             menuScale = 1; menuOpacity = 1
             var i = 0
             Timer.scheduledTimer(withTimeInterval: 0.015/spd, repeats: true) { t in
                 i += 1
-                withAnimation(.spring(response: 0.18/spd, dampingFraction: 0.75)) { shown = i }
+                withAnimation(.spring(response: 0.14 / max(spd, 0.2), dampingFraction: 0.75)) { shown = i }
                 if i >= n { t.invalidate() }
             }
         }
