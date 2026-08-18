@@ -100,6 +100,18 @@ struct SettingsView: View {
                 
                 // Options
                 section("Options", "slider.horizontal.3") {
+                    HStack {
+                        Text("Open Animation").font(.system(size: 11))
+                        Spacer()
+                        Picker("", selection: $settings.openAnim) {
+                            Text("Stagger").tag(0)
+                            Text("Scale").tag(1)
+                            Text("Fade").tag(2)
+                            Text("Bounce").tag(3)
+                        }
+                        .pickerStyle(.segmented)
+                        .frame(width: 220)
+                    }
                     optionRow("Labels", $settings.showLabels)
                     optionRow("Folders", $settings.showActions)
                     optionRow("Haptics", $settings.haptics)

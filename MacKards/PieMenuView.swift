@@ -13,15 +13,43 @@ struct PieMenuContentView: View {
     @State private var shown = 0
     @State private var hovered: Int? = nil
     @State private var ringVis = false
+    @State private var menuScale: CGFloat = 0.01
+    @State private var menuOpacity: Double = 0
     @ObservedObject private var state = PieMenuState.shared
     
     private var total: Int { apps.count + actions.count }
     
     var body: some View {
-        pieBody.onAppear {
-            if settings.lowPower { shown = total; ringVis = true; return }
+        pieBody
+            .onAppear { animateIn() }
+            .onChange(of: state.isClosing) { closing in
+                if closing {
+                    menuScale = 0.01
+                    menuOpacity = 0
+                }
+            }
+    }
+    
+    private func animateIn() {
+        let n = total, lp = settings.lowPower, spd = settings.animSpeed
+        if lp {
+            shown = n; ringVis = true; menuScale = 1; menuOpacity = 1
+            return
+        }
+        switch settings.openAnim {
+        case 1: // scale
+            shown = n; ringVis = true
+            withAnimation(.spring(response: 0.28, dampingFraction: 0.75)) { menuScale = 1; menuOpacity = 1 }
+        case 2: // fade
+            shown = n; ringVis = true
+            withAnimation(.easeOut(duration: 0.28)) { menuScale = 1; menuOpacity = 1 }
+        case 3: // bounce
+            shown = n; ringVis = true
+            withAnimation(.interpolatingSpring(stiffness: 180, damping: 8)) { menuScale = 1; menuOpacity = 1 }
+        default: // stagger
             withAnimation(.spring(response: 0.2, dampingFraction: 0.75)) { ringVis = true }
-            let n = total, spd = settings.animSpeed; var i = 0
+            menuScale = 1; menuOpacity = 1
+            var i = 0
             Timer.scheduledTimer(withTimeInterval: 0.015/spd, repeats: true) { t in
                 i += 1
                 withAnimation(.spring(response: 0.18/spd, dampingFraction: 0.75)) { shown = i }
@@ -62,7 +90,10 @@ struct PieMenuContentView: View {
                     .frame(maxWidth: settings.radius * 1.2)
                     .animation(.easeOut(duration: 0.08), value: hovered)
             }
-        }.frame(width: size, height: size)
+        }
+        .frame(width: size, height: size)
+        .scaleEffect(lp ? 1 : menuScale)
+        .opacity(lp ? 1 : menuOpacity)
     }
     
     private func pieCard(_ i: Int, card: CGFloat, ring: Bool) -> some View {

@@ -19,6 +19,7 @@ final class AppSettings: ObservableObject {
     @Published var haptics: Bool { didSet { d.set(haptics, forKey: "hp") } }
     @Published var hapticStyle: Int { didSet { d.set(hapticStyle, forKey: "hps") } } // 0=light 1=medium 2=strong
     @Published var lowPower: Bool { didSet { d.set(lowPower, forKey: "lp") } }
+    @Published var openAnim: Int { didSet { d.set(openAnim, forKey: "oa") } } // 0=stagger 1=scale 2=fade 3=bounce
     @Published var launchAtLogin: Bool {
         didSet {
             d.set(launchAtLogin, forKey: "lal")
@@ -50,6 +51,7 @@ final class AppSettings: ObservableObject {
         haptics = d.object(forKey: "hp") == nil ? true : d.bool(forKey: "hp")
         hapticStyle = d.object(forKey: "hps") == nil ? 1 : d.integer(forKey: "hps")
         lowPower = d.bool(forKey: "lp")
+        openAnim = d.object(forKey: "oa") == nil ? 0 : d.integer(forKey: "oa")
         launchAtLogin = d.bool(forKey: "lal")
         hotkeyMod1 = d.object(forKey: "hm1") == nil ? 0 : d.integer(forKey: "hm1")
         hotkeyMod2 = d.object(forKey: "hm2") == nil ? 2 : d.integer(forKey: "hm2")
@@ -59,7 +61,7 @@ final class AppSettings: ObservableObject {
     }
     
     func resetToDefaults() {
-        radius=130;cardSize=72;hoverScale=1.2;iconScale=0.6;animSpeed=1;menuStyle=0;cardGap=0;ringThickness=36;showLabels=true;showActions=true;haptics=true;hapticStyle=1;lowPower=false;launchAtLogin=false;hotkeyMod1=0;hotkeyMod2=2
+        radius=130;cardSize=72;hoverScale=1.2;iconScale=0.6;animSpeed=1;menuStyle=0;cardGap=0;ringThickness=36;showLabels=true;showActions=true;haptics=true;hapticStyle=1;lowPower=false;openAnim=0;launchAtLogin=false;hotkeyMod1=0;hotkeyMod2=2
         enabledActions=["downloads","documents","desktop","applications"]
         pinnedAppPaths=Self.defaultApps()
         pinnedFolderPaths=[]
