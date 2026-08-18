@@ -28,12 +28,21 @@ final class PieMenuController {
         let s = AppSettings.shared
         let mouse = NSEvent.mouseLocation
         let apps = loadApps()
-        let actions = s.showActions ? QuickAction.allActions.filter { s.enabledActions.contains($0.id) } : []
+        var actions = s.showActions ? QuickAction.allActions.filter { s.enabledActions.contains($0.id) } : []
+        // Add pinned folders as actions
+        for path in s.pinnedFolderPaths {
+            let url = URL(fileURLWithPath: path)
+            let folderIcon = NSWorkspace.shared.icon(forFile: path)
+            folderIcon.size = NSSize(width: 64, height: 64)
+            actions.append(QuickAction(id: "folder_\(path)", name: url.lastPathComponent, icon: "", targetURL: url, folderImage: folderIcon) {
+                NSWorkspace.shared.open(url)
+            })
+        }
         let n = CGFloat(apps.count + actions.count)
         guard n > 0 else { visible = false; return }
         
         let circ = 2 * .pi * s.radius
-        let card = min((circ - 0.5 * n) / n, s.cardSize)
+        let card = min(circ / n, s.cardSize)
         let side = s.radius * 2 + card + 60
         
         let frame = NSRect(x: mouse.x - side/2, y: mouse.y - side/2, width: side, height: side)

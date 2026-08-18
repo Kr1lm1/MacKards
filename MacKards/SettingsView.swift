@@ -58,43 +58,54 @@ struct SettingsView: View {
     private var generalTab: some View {
         ScrollView {
             VStack(spacing: 16) {
+                // Mode & Hotkeys
+                section("Mode & Hotkeys", "paintbrush") {
+                    HStack {
+                        Picker("Mode", selection: $settings.menuStyle) {
+                            Text("Cards").tag(0)
+                            Text("Ring").tag(1)
+                        }.pickerStyle(.segmented).labelsHidden()
+                        
+                        HStack(spacing: 4) {
+                            Spacer()
+                            Text("← mode").font(.system(size: 12, weight: .medium)).foregroundColor(.secondary.opacity(0.25))
+                            Text("·").font(.system(size: 12)).foregroundColor(.secondary.opacity(0.2))
+                            Text("hotkeys →").font(.system(size: 12, weight: .medium)).foregroundColor(.secondary.opacity(0.25))
+                            Spacer()
+                        }.frame(maxWidth: .infinity)
+                        
+                        HStack(spacing: 4) {
+                            Picker("", selection: $settings.hotkeyMod1) {
+                                ForEach(0..<4) { Text(AppSettings.modifierOptions[$0]).tag($0) }
+                            }.labelsHidden().frame(width: 44)
+                            Text("+").font(.system(size: 10)).foregroundColor(.secondary)
+                            Picker("", selection: $settings.hotkeyMod2) {
+                                ForEach(0..<4) { Text(AppSettings.modifierOptions[$0]).tag($0) }
+                            }.labelsHidden().frame(width: 44)
+                        }
+                    }
+                }
+                
                 // Layout
                 section("Layout", "circle.grid.2x2") {
                     slider("Radius", $settings.radius, 80...200, 5, "%.0f")
-                    slider("Card Size", $settings.cardSize, 50...110, 2, "%.0f")
-                    slider("Hover Scale", Binding(get: { Double(settings.hoverScale) }, set: { settings.hoverScale = CGFloat($0) }), 1.0...1.3, 0.02, "%.2f")
+                    if settings.menuStyle == 0 {
+                        slider("Card Size", $settings.cardSize, 50...110, 2, "%.0f")
+                    } else {
+                        slider("Thickness", $settings.ringThickness, 40...100, 2, "%.0f")
+                    }
+                    slider("Icon Scale", Binding(get: { Double(settings.iconScale) }, set: { settings.iconScale = CGFloat($0) }), 0.3...0.9, 0.05, "%.2f")
                     slider("Anim Speed", $settings.animSpeed, 0.5...3.0, 0.25, "%.1fx")
                 }
                 
-                // Hotkey + Options side by side
-                HStack(alignment: .top, spacing: 12) {
-                    section("Hotkey", "keyboard") {
-                        Spacer(minLength: 0)
-                        Text(settings.hotkeyLabel)
-                            .font(.system(size: 24, weight: .light, design: .rounded))
-                            .foregroundColor(.primary)
-                        HStack(spacing: 8) {
-                            Picker("", selection: $settings.hotkeyMod1) {
-                                ForEach(0..<4) { Text(AppSettings.modifierOptions[$0]).tag($0) }
-                            }.labelsHidden()
-                            Text("+").font(.system(size: 11, weight: .medium)).foregroundColor(.secondary)
-                            Picker("", selection: $settings.hotkeyMod2) {
-                                ForEach(0..<4) { Text(AppSettings.modifierOptions[$0]).tag($0) }
-                            }.labelsHidden()
-                        }
-                        .frame(maxWidth: .infinity)
-                        Text("Hold to open ring")
-                            .font(.system(size: 9)).foregroundColor(.secondary)
-                        Spacer(minLength: 0)
-                    }
-                    
-                    section("Options", "slider.horizontal.3") {
-                        optionRow("Labels", $settings.showLabels)
-                        optionRow("Folders", $settings.showActions)
-                        optionRow("Haptics", $settings.haptics)
-                        optionRow("Low Power", $settings.lowPower)
-                    }
-                }.fixedSize(horizontal: false, vertical: true)
+                // Options
+                section("Options", "slider.horizontal.3") {
+                    optionRow("Labels", $settings.showLabels)
+                    optionRow("Folders", $settings.showActions)
+                    optionRow("Haptics", $settings.haptics)
+                    optionRow("Low Power", $settings.lowPower)
+                    optionRow("Launch at Login", $settings.launchAtLogin)
+                }
                 
                 // Folders
                 if settings.showActions {
@@ -113,6 +124,20 @@ struct SettingsView: View {
                                     Spacer()
                                 }
                             }.toggleStyle(.switch).controlSize(.mini)
+                        }
+                        // Pinned custom folders
+                        if !settings.pinnedFolderPaths.isEmpty {
+                            Divider()
+                            ForEach(settings.pinnedFolderPaths, id: \.self) { path in
+                                HStack(spacing: 5) {
+                                    Image(systemName: "folder.fill").frame(width: 14).foregroundColor(.orange).font(.system(size: 10))
+                                    Text(URL(fileURLWithPath: path).lastPathComponent).font(.system(size: 11))
+                                    Spacer()
+                                    Button { settings.pinnedFolderPaths.removeAll { $0 == path } } label: {
+                                        Image(systemName: "xmark.circle.fill").font(.system(size: 10)).foregroundColor(.secondary.opacity(0.5))
+                                    }.buttonStyle(.plain)
+                                }
+                            }
                         }
                     }
                 }
@@ -169,7 +194,7 @@ struct SettingsView: View {
                 .overlay(
                     VStack(spacing: 4) {
                         Image(systemName: "plus.app").font(.system(size: 16)).foregroundColor(.secondary.opacity(0.5))
-                        Text("Drop .app here").font(.system(size: 11)).foregroundColor(.secondary)
+                        Text("Drop .app or folder here").font(.system(size: 11)).foregroundColor(.secondary)
                     }
                 )
                 .padding(.horizontal, 12).padding(.vertical, 12)
@@ -177,11 +202,19 @@ struct SettingsView: View {
                     for p in providers {
                         p.loadItem(forTypeIdentifier: "public.file-url", options: nil) { item, _ in
                             guard let data = item as? Data,
-                                  let url = URL(dataRepresentation: data, relativeTo: nil),
-                                  url.pathExtension == "app" else { return }
+                                  let url = URL(dataRepresentation: data, relativeTo: nil) else { return }
                             DispatchQueue.main.async {
-                                if !settings.pinnedAppPaths.contains(url.path) {
-                                    settings.pinnedAppPaths.append(url.path)
+                                if url.pathExtension == "app" {
+                                    if !settings.pinnedAppPaths.contains(url.path) {
+                                        settings.pinnedAppPaths.append(url.path)
+                                    }
+                                } else {
+                                    var isDir: ObjCBool = false
+                                    if FileManager.default.fileExists(atPath: url.path, isDirectory: &isDir), isDir.boolValue {
+                                        if !settings.pinnedFolderPaths.contains(url.path) {
+                                            settings.pinnedFolderPaths.append(url.path)
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -193,27 +226,30 @@ struct SettingsView: View {
     // MARK: - About
     
     private var aboutTab: some View {
-        VStack(spacing: 16) {
-            Spacer()
-            Image(systemName: "rectangle.portrait.on.rectangle.portrait.angled.fill").font(.system(size: 44))
-                .foregroundStyle(.primary)
-            Text("MacKards").font(.system(size: 20, weight: .semibold))
-            Text("v1.0 beta • macOS Golden Gate").font(.system(size: 11)).foregroundColor(.secondary)
-            
-            Divider().frame(width: 80).padding(.vertical, 2)
-            
-            Text("Radial launcher for your favorite apps.\nHold \(settings.hotkeyLabel) to summon the ring.")
-                .font(.system(size: 11))
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-                .lineSpacing(3)
-            
-            Spacer()
-            
-            HStack(spacing: 16) {
-                Label("Swift", systemImage: "swift").font(.system(size: 10)).foregroundColor(.secondary)
-                Label("SwiftUI", systemImage: "rectangle.on.rectangle").font(.system(size: 10)).foregroundColor(.secondary)
-            }.padding(.bottom, 14)
+        VStack(spacing: 14) {
+                Spacer()
+                Image(systemName: "rectangle.portrait.on.rectangle.portrait.angled.fill").font(.system(size: 44))
+                    .foregroundStyle(.primary)
+                VStack(spacing: 3) {
+                    Text("MacKards").font(.system(size: 20, weight: .semibold))
+                    Text("by KRILMIW • Open Source").font(.system(size: 10, weight: .medium)).foregroundColor(.secondary)
+                }
+                Text("v1.0 beta • macOS Golden Gate").font(.system(size: 10)).foregroundColor(.secondary.opacity(0.7))
+                
+                Divider().frame(width: 80).padding(.vertical, 2)
+                
+                Text("Radial launcher for your favorite apps.\nHold \(settings.hotkeyLabel) to summon the ring.")
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(3)
+                
+                Spacer()
+                
+                HStack(spacing: 16) {
+                    Label("Swift", systemImage: "swift").font(.system(size: 10)).foregroundColor(.secondary)
+                    Label("SwiftUI", systemImage: "rectangle.on.rectangle").font(.system(size: 10)).foregroundColor(.secondary)
+                }.padding(.bottom, 14)
         }.frame(maxWidth: .infinity)
     }
     

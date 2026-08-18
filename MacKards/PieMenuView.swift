@@ -1,6 +1,8 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
+private let lpColor = Color(nsColor: .controlBackgroundColor)
+
 struct PieMenuContentView: View {
     let apps: [AppItem]
     let actions: [QuickAction]
@@ -10,70 +12,89 @@ struct PieMenuContentView: View {
     
     @State private var shown = 0
     @State private var hovered: Int? = nil
+    @State private var ringVis = false
     @ObservedObject private var state = PieMenuState.shared
     
     private var total: Int { apps.count + actions.count }
     
     var body: some View {
         pieBody.onAppear {
-            if settings.lowPower { shown = total; return }
-            let n = total; let spd = settings.animSpeed; var i = 0
-            Timer.scheduledTimer(withTimeInterval: 0.015 / spd, repeats: true) { t in
+            if settings.lowPower { shown = total; ringVis = true; return }
+            withAnimation(.spring(response: 0.2, dampingFraction: 0.75)) { ringVis = true }
+            let n = total, spd = settings.animSpeed; var i = 0
+            Timer.scheduledTimer(withTimeInterval: 0.015/spd, repeats: true) { t in
                 i += 1
-                withAnimation(.spring(response: 0.18 / spd, dampingFraction: 0.75)) { shown = i }
+                withAnimation(.spring(response: 0.18/spd, dampingFraction: 0.75)) { shown = i }
                 if i >= n { t.invalidate() }
             }
         }
     }
     
     private var pieBody: some View {
-        let n = CGFloat(total)
+        let n = CGFloat(total), lp = settings.lowPower
         let circ = 2 * .pi * settings.radius
-        let card = min((circ - 0.5 * n) / n, settings.cardSize)
+        let card = min((circ - settings.cardGap * n) / n, settings.cardSize)
         let size = settings.radius * 2 + card + 60
+        let ring = settings.menuStyle == 1
+        let thick = settings.ringThickness
+        let closing = state.isClosing
+        
         return ZStack {
-            ForEach(0..<total, id: \.self) { i in pieCard(i, card: card) }
+            if ring {
+                let outer = settings.radius + thick/2, inner = max(settings.radius - thick/2, 10)
+                DonutShape(outerRadius: outer, innerRadius: inner)
+                    .fill(lp ? AnyShapeStyle(lpColor) : AnyShapeStyle(.thinMaterial))
+                    .frame(width: size, height: size)
+                    .overlay(DonutShape(outerRadius: outer, innerRadius: inner).stroke(Color.primary.opacity(0.1), lineWidth: 0.5).frame(width: size, height: size))
+                    .scaleEffect(ringVis && !closing ? 1 : 0.7)
+                    .opacity(ringVis && !closing ? 1 : 0)
+                    .animation(lp ? nil : .spring(response: 0.2, dampingFraction: 0.75), value: ringVis)
+                    .animation(lp ? nil : .easeIn(duration: 0.1), value: closing)
+            }
+            
+            ForEach(0..<total, id: \.self) { i in pieCard(i, card: card, ring: ring) }
+            
             if settings.showLabels, let h = hovered {
-                Text(h < apps.count ? apps[h].name : actions[h - apps.count].name)
+                Text(h < apps.count ? apps[h].name : actions[h-apps.count].name)
                     .font(.system(size: 13, weight: .medium)).foregroundStyle(.primary)
-                    .lineLimit(1).frame(maxWidth: settings.radius * 1.2)
+                    .lineLimit(1).padding(.horizontal, 8).padding(.vertical, 4)
+                    .background(Capsule().fill(lp ? AnyShapeStyle(lpColor) : AnyShapeStyle(.thinMaterial)))
+                    .frame(maxWidth: settings.radius * 1.2)
                     .animation(.easeOut(duration: 0.08), value: hovered)
             }
         }.frame(width: size, height: size)
     }
     
-    private func pieCard(_ i: Int, card: CGFloat) -> some View {
+    private func pieCard(_ i: Int, card: CGFloat, ring: Bool) -> some View {
         let slice = 360.0 / Double(total)
-        let ang = slice * Double(i) - 90
-        let rad = ang * .pi / 180
-        let isH = hovered == i
-        let vis = i < shown && !state.isClosing
+        let ang = slice * Double(i) - 90, rad = ang * .pi / 180
         let lp = settings.lowPower
-        let r = settings.radius + (isH ? 6.0 : 0)
+        let isH = hovered == i, vis = i < shown && !state.isClosing
+        let r = settings.radius + (isH && !lp ? 6.0 : 0)
         let x = cos(rad) * r, y = sin(rad) * r
-        let pr = (slice * Double(max(i-1, 0)) - 90) * .pi / 180
+        let pr = (slice * Double(max(i-1,0)) - 90) * .pi / 180
         let px = cos(pr) * settings.radius, py = sin(pr) * settings.radius
         let shape = PieSliceShape(narrowFactor: 0.55, rotation: ang + 90)
         
         return ZStack {
-            if lp {
-                shape.fill(Color(nsColor: .windowBackgroundColor).opacity(0.9)).frame(width: card, height: card)
-            } else {
-                shape.fill(.thinMaterial).frame(width: card, height: card)
+            if !ring {
+                shape.fill(lp ? AnyShapeStyle(lpColor) : AnyShapeStyle(.thinMaterial)).frame(width: card, height: card)
+                shape.stroke(Color.primary.opacity(0.15), lineWidth: 0.5).frame(width: card, height: card)
             }
-            shape.stroke(Color.primary.opacity(0.15), lineWidth: 0.5).frame(width: card, height: card)
-            cardContent(i, card)
+            cardIcon(i, card)
         }
         .frame(width: card, height: card)
-        .contentShape(shape)
-        .onTapGesture { if i < apps.count { onSelect(apps[i]) } else { onAction(actions[i-apps.count]) } }
+        .contentShape(ring ? AnyShape(Circle()) : AnyShape(shape))
+        .onTapGesture { i < apps.count ? onSelect(apps[i]) : onAction(actions[i-apps.count]) }
         .onHover { on in
             let prev = hovered; hovered = on ? i : nil
             let st = PieMenuState.shared
             if on {
                 if i < apps.count { st.hoveredApp = apps[i]; st.hoveredAction = nil }
                 else { st.hoveredApp = nil; st.hoveredAction = actions[i-apps.count] }
-                if prev != i && settings.haptics { NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .now) }
+                if prev != i && settings.haptics {
+                    NSHapticFeedbackManager.defaultPerformer.perform([.levelChange,.generic,.alignment][settings.hapticStyle], performanceTime: .now)
+                }
             } else { st.hoveredApp = nil; st.hoveredAction = nil }
         }
         .onDrop(of: [.fileURL], isTargeted: nil) { p in
@@ -88,40 +109,64 @@ struct PieMenuContentView: View {
         .animation(lp ? nil : .spring(response: 0.18, dampingFraction: 0.75), value: vis)
     }
     
-    @ViewBuilder private func cardContent(_ i: Int, _ size: CGFloat) -> some View {
+    @ViewBuilder private func cardIcon(_ i: Int, _ size: CGFloat) -> some View {
+        let scale = settings.iconScale
         if i < apps.count {
-            Image(nsImage: apps[i].icon).resizable().aspectRatio(contentMode: .fit).frame(width: size*0.6, height: size*0.6)
+            Image(nsImage: apps[i].icon).resizable().aspectRatio(contentMode: .fit).frame(width: size*scale, height: size*scale)
         } else {
-            let s = size * 0.4
-            Image(systemName: actions[i-apps.count].icon).font(.system(size: s, weight: .medium))
-                .foregroundStyle(.primary).frame(width: s*1.2, height: s*1.2)
+            let act = actions[i-apps.count]
+            if let img = act.folderImage {
+                Image(nsImage: img).resizable().aspectRatio(contentMode: .fit).frame(width: size*scale, height: size*scale)
+            } else {
+                let s = size * scale * 0.65
+                Image(systemName: act.icon).font(.system(size: s, weight: .medium))
+                    .foregroundStyle(.primary).frame(width: s*1.2, height: s*1.2)
+            }
         }
     }
 }
 
+// MARK: - Shapes
+
 struct PieSliceShape: Shape {
-    let narrowFactor: CGFloat
-    let rotation: Double
+    let narrowFactor: CGFloat, rotation: Double
     func path(in rect: CGRect) -> Path {
-        let s = min(rect.width, rect.height), c = CGPoint(x: rect.midX, y: rect.midY)
-        let h = s/2, n = h*narrowFactor, cr = 4.0/s
-        let tl=CGPoint(x:-h,y:-h),tr=CGPoint(x:h,y:-h),br=CGPoint(x:n,y:h),bl=CGPoint(x:-n,y:h)
-        let oc=CGPoint(x:0,y:-h-s*0.06),ic=CGPoint(x:0,y:h-s*0.06)
-        let a=rotation * .pi/180, ca=cos(a), sa=sin(a)
-        func r(_ p:CGPoint)->CGPoint{CGPoint(x:c.x+p.x*ca-p.y*sa,y:c.y+p.x*sa+p.y*ca)}
-        func l(_ a:CGPoint,_ b:CGPoint,_ t:CGFloat)->CGPoint{CGPoint(x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t)}
-        let rTL=r(tl),rTR=r(tr),rBR=r(br),rBL=r(bl),rOC=r(oc),rIC=r(ic)
-        var p = Path()
-        p.move(to:l(rTL,rTR,cr))
-        p.addQuadCurve(to:l(rTR,rTL,cr),control:rOC)
-        p.addQuadCurve(to:l(rTR,rBR,cr),control:rTR)
-        p.addLine(to:l(rBR,rTR,cr))
-        p.addQuadCurve(to:l(rBR,rBL,cr),control:rBR)
-        p.addQuadCurve(to:l(rBL,rBR,cr),control:rIC)
-        p.addQuadCurve(to:l(rBL,rTL,cr),control:rBL)
-        p.addLine(to:l(rTL,rBL,cr))
-        p.addQuadCurve(to:l(rTL,rTR,cr),control:rTL)
+        let s=min(rect.width,rect.height),c=CGPoint(x:rect.midX,y:rect.midY)
+        let h=s/2,n=h*narrowFactor,cr=4.0/s
+        let a = rotation * .pi/180, ca = cos(a), sa = sin(a)
+        func r(_ p:CGPoint)->CGPoint{.init(x:c.x+p.x*ca-p.y*sa,y:c.y+p.x*sa+p.y*ca)}
+        func l(_ a:CGPoint,_ b:CGPoint,_ t:CGFloat)->CGPoint{.init(x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t)}
+        let tl=r(.init(x:-h,y:-h)),tr=r(.init(x:h,y:-h))
+        let br=r(.init(x:n,y:h)),bl=r(.init(x:-n,y:h))
+        let oc=r(.init(x:0,y:-h-s*0.06)),ic=r(.init(x:0,y:h-s*0.06))
+        var p=Path()
+        p.move(to:l(tl,tr,cr))
+        p.addQuadCurve(to:l(tr,tl,cr),control:oc)
+        p.addQuadCurve(to:l(tr,br,cr),control:tr)
+        p.addLine(to:l(br,tr,cr))
+        p.addQuadCurve(to:l(br,bl,cr),control:br)
+        p.addQuadCurve(to:l(bl,br,cr),control:ic)
+        p.addQuadCurve(to:l(bl,tl,cr),control:bl)
+        p.addLine(to:l(tl,bl,cr))
+        p.addQuadCurve(to:l(tl,tr,cr),control:tl)
         p.closeSubpath()
         return p
     }
+}
+
+struct DonutShape: Shape {
+    let outerRadius: CGFloat, innerRadius: CGFloat
+    func path(in rect: CGRect) -> Path {
+        let c=CGPoint(x:rect.midX,y:rect.midY)
+        var p=Path()
+        p.addArc(center:c,radius:outerRadius,startAngle:.zero,endAngle:.degrees(360),clockwise:false)
+        p.addArc(center:c,radius:innerRadius,startAngle:.zero,endAngle:.degrees(360),clockwise:true)
+        return p
+    }
+}
+
+struct AnyShape: Shape {
+    private let b: (CGRect)->Path
+    init<S:Shape>(_ s:S){b={s.path(in:$0)}}
+    func path(in rect:CGRect)->Path{b(rect)}
 }

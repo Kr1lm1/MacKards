@@ -6,7 +6,12 @@ struct QuickAction: Identifiable {
     let name: String
     let icon: String
     let targetURL: URL?
+    let folderImage: NSImage?
     let action: () -> Void
+    
+    init(id: String, name: String, icon: String, targetURL: URL?, folderImage: NSImage? = nil, action: @escaping () -> Void) {
+        self.id = id; self.name = name; self.icon = icon; self.targetURL = targetURL; self.folderImage = folderImage; self.action = action
+    }
     
     func handleDrop(providers: [NSItemProvider]) {
         guard let target = targetURL else { return }
