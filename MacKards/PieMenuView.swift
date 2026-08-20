@@ -67,7 +67,6 @@ struct PieMenuContentView: View {
                 let outer = settings.radius + thick/2, inner = max(settings.radius - thick/2, 10)
                 DonutShape(outerRadius: outer, innerRadius: inner)
                     .fill(lp ? AnyShapeStyle(lpColor) : AnyShapeStyle(.ultraThinMaterial))
-                    .opacity(0.55)
                     .frame(width: size, height: size)
                     .overlay(DonutShape(outerRadius: outer, innerRadius: inner).stroke(Color.primary.opacity(0.1), lineWidth: 0.5).frame(width: size, height: size))
                     .scaleEffect(ringVis && !closing ? 1 : 0.85)
