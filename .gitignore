@@ -1,0 +1,25 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Swift
+.build/
+*.xcodeproj
+*.xcworkspace
+xcuserdata/
+DerivedData/
+*.swiftpm/
+
+# App bundles
+*.app/
+
+# IDE
+.idea/
+.vscode/
+
+# Logs
+*.log
+
+# Zip archives
+*.zip
