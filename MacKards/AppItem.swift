@@ -14,11 +14,19 @@ final class AppFinder {
     static let shared = AppFinder()
     private var cache: [AppItem] = []
     private var cacheTime: Date = .distantPast
+    private let queue = DispatchQueue(label: "mackards.appfinder", qos: .userInitiated)
     private init() {}
     
-    func getApps() -> [AppItem] {
-        if Date().timeIntervalSince(cacheTime) > 120 || cache.isEmpty { refresh() }
-        return cache
+    func getApps(completion: @escaping ([AppItem]) -> Void) {
+        if Date().timeIntervalSince(cacheTime) < 120 && !cache.isEmpty {
+            completion(cache)
+            return
+        }
+        queue.async { [weak self] in
+            guard let self else { return }
+            self.refresh()
+            DispatchQueue.main.async { completion(self.cache) }
+        }
     }
     
     private func refresh() {

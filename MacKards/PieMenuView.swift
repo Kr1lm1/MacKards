@@ -45,7 +45,8 @@ struct PieMenuContentView: View {
             withAnimation(.spring(response: 0.18 / max(spd, 0.2), dampingFraction: 0.75)) { ringVis = true }
             menuScale = 1; menuOpacity = 1
             var i = 0
-            Timer.scheduledTimer(withTimeInterval: 0.015/spd, repeats: true) { t in
+            let interval = max(0.015 / spd, 0.01)
+            Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { t in
                 i += 1
                 withAnimation(.spring(response: 0.14 / max(spd, 0.2), dampingFraction: 0.75)) { shown = i }
                 if i >= n { t.invalidate() }

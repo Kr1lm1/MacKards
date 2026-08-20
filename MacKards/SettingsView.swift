@@ -35,7 +35,7 @@ struct SettingsView: View {
             }.frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(width: 520, height: 480)
-        .onAppear { apps = AppFinder.shared.getApps() }
+        .onAppear { AppFinder.shared.getApps { apps = $0 } }
     }
     
     private func tabBtn(_ title: String, _ icon: String, _ idx: Int) -> some View {
