@@ -40,14 +40,14 @@ final class AppSettings: ObservableObject {
     private func notify() { NotificationCenter.default.post(name: .settingsChanged, object: nil) }
     
     private init() {
-        let r = d.double(forKey: "r"); radius = r > 0 ? r : 130
+        let r = d.double(forKey: "r"); radius = r > 0 ? r : 90
         let cs = d.double(forKey: "cs"); cardSize = cs > 0 ? cs : 72
         let hs = d.double(forKey: "hs"); hoverScale = hs > 0 ? hs : 1.2
-        let is_ = d.double(forKey: "is"); iconScale = is_ > 0 ? is_ : 0.6
-        let a = d.double(forKey: "as"); animSpeed = a > 0 ? a : 1.0
-        menuStyle = d.integer(forKey: "ms")
+        let is_ = d.double(forKey: "is"); iconScale = is_ > 0 ? is_ : 0.7
+        let a = d.double(forKey: "as"); animSpeed = a > 0 ? a : 2.0
+        menuStyle = d.object(forKey: "ms") == nil ? 1 : d.integer(forKey: "ms")
         let cg = d.object(forKey: "cg"); cardGap = cg != nil ? CGFloat(d.double(forKey: "cg")) : 0
-        let rt = d.double(forKey: "rt"); ringThickness = rt > 0 ? rt : 36
+        let rt = d.double(forKey: "rt"); ringThickness = rt > 0 ? rt : 64
         showLabels = d.object(forKey: "sl") == nil ? true : d.bool(forKey: "sl")
         showActions = d.object(forKey: "sa") == nil ? true : d.bool(forKey: "sa")
         haptics = d.object(forKey: "hp") == nil ? true : d.bool(forKey: "hp")
@@ -61,30 +61,32 @@ final class AppSettings: ObservableObject {
         launchAtLogin = d.bool(forKey: "lal")
         hotkeyMod1 = d.object(forKey: "hm1") == nil ? 0 : d.integer(forKey: "hm1")
         hotkeyMod2 = d.object(forKey: "hm2") == nil ? 2 : d.integer(forKey: "hm2")
-        enabledActions = d.stringArray(forKey: "ea") ?? ["downloads","documents","desktop","applications"]
+        enabledActions = d.stringArray(forKey: "ea") ?? ["downloads","documents","desktop","trash"]
         pinnedAppPaths = d.stringArray(forKey: "pa") ?? Self.defaultApps()
         pinnedFolderPaths = d.stringArray(forKey: "pf") ?? []
         blurLevel = d.object(forKey: "bl") == nil ? 0 : d.integer(forKey: "bl")
     }
     
     func resetToDefaults() {
-        radius=130;cardSize=72;hoverScale=1.2;iconScale=0.6;animSpeed=1;menuStyle=0;cardGap=0;ringThickness=36;showLabels=true;showActions=true;haptics=true;hapticStyle=1;lowPower=false;openAnim=0;launchAtLogin=false;hotkeyMod1=0;hotkeyMod2=2
-        enabledActions=["downloads","documents","desktop","applications"]
+        radius=90;cardSize=72;hoverScale=1.2;iconScale=0.7;animSpeed=2.0;menuStyle=1;cardGap=0;ringThickness=64;showLabels=true;showActions=true;haptics=true;hapticStyle=1;lowPower=false;openAnim=0;launchAtLogin=false;hotkeyMod1=0;hotkeyMod2=2
+        enabledActions=["downloads","documents","desktop","trash"]
         pinnedAppPaths=Self.defaultApps()
         pinnedFolderPaths=[]
         blurLevel=0
     }
     
     private static func defaultApps() -> [String] {
-        ["/Applications/Safari.app","/Applications/Google Chrome.app",
-         "/System/Applications/Messages.app","/Applications/Telegram.app",
-         "/System/Applications/Mail.app","/System/Applications/Notes.app",
-         "/System/Applications/System Settings.app","/Applications/Spotify.app",
-         "/System/Applications/Music.app","/Applications/Visual Studio Code.app",
-         "/System/Applications/Finder.app","/System/Applications/Calendar.app",
-         "/Applications/Slack.app","/Applications/Discord.app",
-         "/System/Applications/Terminal.app","/System/Applications/Photos.app"
+        let all = [
+            "/Applications/Safari.app","/Applications/Google Chrome.app",
+            "/System/Applications/Messages.app","/Applications/Telegram.app",
+            "/System/Applications/Mail.app","/System/Applications/Notes.app",
+            "/System/Applications/System Settings.app","/Applications/Spotify.app",
+            "/System/Applications/Music.app","/Applications/Visual Studio Code.app",
+            "/System/Applications/Finder.app","/System/Applications/Calendar.app",
+            "/Applications/Slack.app","/Applications/Discord.app",
+            "/System/Applications/Terminal.app","/System/Applications/Photos.app"
         ].filter { FileManager.default.fileExists(atPath: $0) }
+        return Array(all.shuffled().prefix(6))
     }
     
     private static let modFlags: [NSEvent.ModifierFlags] = [.command,.control,.option,.shift]
