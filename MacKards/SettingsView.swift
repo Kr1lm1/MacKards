@@ -136,6 +136,7 @@ struct SettingsView: View {
                     optionRow("Haptics", $settings.haptics)
                     optionRow("Low Power", $settings.lowPower)
                     optionRow("Launch at Login", $settings.launchAtLogin)
+                    devRow("Blur", $settings.blurLevel)
                 }
                 
                 // Folders
@@ -336,6 +337,21 @@ struct SettingsView: View {
             Line().stroke(style: StrokeStyle(lineWidth: 0.5, dash: [2, 2]))
                 .foregroundColor(.secondary.opacity(0.4)).frame(height: 1)
             Toggle("", isOn: value).toggleStyle(.switch).controlSize(.mini).labelsHidden()
+        }
+    }
+    
+    private func devRow(_ label: String, _ value: Binding<Int>) -> some View {
+        HStack(spacing: 4) {
+            Text(label).font(.system(size: 11))
+            Text("(dev)").font(.system(size: 9)).foregroundColor(.orange.opacity(0.8))
+            Line().stroke(style: StrokeStyle(lineWidth: 0.5, dash: [2, 2]))
+                .foregroundColor(.secondary.opacity(0.4)).frame(height: 1)
+            Picker("", selection: value) {
+                Text("UltraThin").tag(0)
+                Text("Thin").tag(1)
+                Text("Regular").tag(2)
+                Text("Thick").tag(3)
+            }.labelsHidden().controlSize(.mini).frame(width: 100)
         }
     }
 }

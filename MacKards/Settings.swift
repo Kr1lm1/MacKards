@@ -1,5 +1,6 @@
 import Foundation
 import AppKit
+import SwiftUI
 import ServiceManagement
 
 final class AppSettings: ObservableObject {
@@ -34,6 +35,7 @@ final class AppSettings: ObservableObject {
     @Published var enabledActions: [String] { didSet { d.set(enabledActions, forKey: "ea"); notify() } }
     @Published var pinnedAppPaths: [String] { didSet { d.set(pinnedAppPaths, forKey: "pa"); notify() } }
     @Published var pinnedFolderPaths: [String] { didSet { d.set(pinnedFolderPaths, forKey: "pf"); notify() } }
+    @Published var blurLevel: Int { didSet { d.set(blurLevel, forKey: "bl") } } // 0=ultraThin 1=thin 2=regular 3=thick
     
     private func notify() { NotificationCenter.default.post(name: .settingsChanged, object: nil) }
     
@@ -62,6 +64,7 @@ final class AppSettings: ObservableObject {
         enabledActions = d.stringArray(forKey: "ea") ?? ["downloads","documents","desktop","applications"]
         pinnedAppPaths = d.stringArray(forKey: "pa") ?? Self.defaultApps()
         pinnedFolderPaths = d.stringArray(forKey: "pf") ?? []
+        blurLevel = d.object(forKey: "bl") == nil ? 0 : d.integer(forKey: "bl")
     }
     
     func resetToDefaults() {
@@ -69,6 +72,7 @@ final class AppSettings: ObservableObject {
         enabledActions=["downloads","documents","desktop","applications"]
         pinnedAppPaths=Self.defaultApps()
         pinnedFolderPaths=[]
+        blurLevel=0
     }
     
     private static func defaultApps() -> [String] {
@@ -88,6 +92,15 @@ final class AppSettings: ObservableObject {
     var hotkeyModifiers: NSEvent.ModifierFlags { [Self.modFlags[hotkeyMod1], Self.modFlags[hotkeyMod2]] }
     var hotkeyLabel: String { Self.modLabels[hotkeyMod1]+Self.modLabels[hotkeyMod2] }
     static var modifierOptions: [String] { modLabels }
+    
+    var menuMaterial: AnyShapeStyle {
+        switch blurLevel {
+        case 1: return AnyShapeStyle(.thinMaterial)
+        case 2: return AnyShapeStyle(.regularMaterial)
+        case 3: return AnyShapeStyle(.thickMaterial)
+        default: return AnyShapeStyle(.ultraThinMaterial)
+        }
+    }
 }
 
 extension Notification.Name {

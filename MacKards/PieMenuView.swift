@@ -66,7 +66,7 @@ struct PieMenuContentView: View {
             if ring {
                 let outer = settings.radius + thick/2, inner = max(settings.radius - thick/2, 10)
                 DonutShape(outerRadius: outer, innerRadius: inner)
-                    .fill(lp ? AnyShapeStyle(lpColor) : AnyShapeStyle(.ultraThinMaterial))
+                    .fill(lp ? AnyShapeStyle(lpColor) : settings.menuMaterial)
                     .frame(width: size, height: size)
                     .overlay(DonutShape(outerRadius: outer, innerRadius: inner).stroke(Color.primary.opacity(0.1), lineWidth: 0.5).frame(width: size, height: size))
                     .scaleEffect(ringVis && !closing ? 1 : 0.85)
@@ -104,7 +104,7 @@ struct PieMenuContentView: View {
         
         return ZStack {
             if !ring {
-                shape.fill(lp ? AnyShapeStyle(lpColor) : AnyShapeStyle(.thinMaterial)).frame(width: card, height: card)
+                shape.fill(lp ? AnyShapeStyle(lpColor) : settings.menuMaterial).frame(width: card, height: card)
                 shape.stroke(Color.primary.opacity(0.15), lineWidth: 0.5).frame(width: card, height: card)
             }
             cardIcon(i, card)
