@@ -141,36 +141,17 @@ struct PieMenuContentView: View {
                 let label = h < apps.count ? apps[h].name
                     : h < apps.count + actions.count ? actions[h - apps.count].name
                     : groups[h - apps.count - actions.count].name
-                let off = labelOffset(for: h, card: card)
                 Text(label)
                     .font(.system(size: 13, weight: .medium)).foregroundStyle(.primary)
                     .lineLimit(1).padding(.horizontal, 8).padding(.vertical, 4)
                     .background(Capsule().fill(lp ? AnyShapeStyle(lpColor) : AnyShapeStyle(.thinMaterial)))
                     .frame(maxWidth: radius * 1.2)
-
                     .animation(.easeOut(duration: 0.08), value: hovered)
             }
         }
-        .frame(width: size, height: size)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .scaleEffect(lp ? 1 : menuScale)
         .opacity(lp ? 1 : menuOpacity)
-    }
-    
-    private func labelOffset(for h: Int, card: CGFloat) -> (x: CGFloat, y: CGFloat) {
-        if let arcRange = arc {
-            let span = arcRange.upperBound - arcRange.lowerBound
-            let slice = span / Double(max(apps.count, 1))
-            let ang = arcRange.lowerBound + slice * Double(h) + slice / 2
-            let rad = ang * .pi / 180
-            let labelR = radius + settings.ringThickness/2 + 14
-            return (cos(rad) * labelR, sin(rad) * labelR)
-        } else {
-            let step = 360.0 / Double(max(total, 1))
-            let startA = -90.0 - step * Double(max(total, 1) - 1) / 2
-            let ang = (startA + step * Double(h)) * .pi / 180
-            let labelR = radius + card/2 + 14
-            return (cos(ang) * labelR, sin(ang) * labelR)
-        }
     }
     
     private func pieCard(_ i: Int, card: CGFloat, ring: Bool) -> some View {
