@@ -86,10 +86,10 @@ struct PieMenuContentView: View {
             } else if let arcRange = arc {
                 ZStack {
                     ArcShape(radius: radius, thickness: thick, start: arcRange.lowerBound, end: arcRange.upperBound)
-                        .stroke(outline, style: StrokeStyle(lineWidth: thick + 3, lineCap: .round))
+                        .stroke(outline, style: StrokeStyle(lineWidth: 1.5, lineCap: .butt))
                         .frame(width: size, height: size)
                     ArcShape(radius: radius, thickness: thick, start: arcRange.lowerBound, end: arcRange.upperBound)
-                        .stroke(lp ? AnyShapeStyle(lpColor) : AnyShapeStyle(settings.menuMaterial), style: StrokeStyle(lineWidth: thick, lineCap: .round))
+                        .stroke(lp ? AnyShapeStyle(lpColor) : AnyShapeStyle(settings.menuMaterial), style: StrokeStyle(lineWidth: thick - 3, lineCap: .butt))
                         .frame(width: size, height: size)
                 }
                 .scaleEffect(ringVis && !subClosing ? 1 : 0.55)
