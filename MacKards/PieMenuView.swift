@@ -103,7 +103,8 @@ struct PieMenuContentView: View {
                     let slice = span / Double(max(apps.count, 1))
                     let ang = arcRange.lowerBound + slice * Double(i) + slice / 2
                     let rad = ang * .pi / 180
-                    let vis = i < shown && !subClosing
+                    let atPos = i < shown
+                    let vis = atPos && !subClosing
                     let jump = (hovered == i && !lp) ? 6.0 : 0.0
                     let rr = radius + jump
                     let cx = cos(rad) * rr
@@ -120,11 +121,11 @@ struct PieMenuContentView: View {
                                 NSHapticFeedbackManager.defaultPerformer.perform([.levelChange,.generic,.alignment][settings.hapticStyle], performanceTime: .now)
                             }
                         }
-                        .offset(x: vis ? cx : ox, y: vis ? cy : oy)
+                        .offset(x: atPos ? cx : ox, y: atPos ? cy : oy)
                         .scaleEffect(vis ? 1 : 0.01)
                         .opacity(vis ? 1 : 0)
                         .animation(.spring(response: 0.18, dampingFraction: 0.75), value: hovered)
-                        .animation(.spring(response: 0.16, dampingFraction: 0.8), value: shown)
+                        .animation(.spring(response: 0.16, dampingFraction: 0.8), value: vis)
                         .onTapGesture { onSelect(apps[i]) }
                 }
             }

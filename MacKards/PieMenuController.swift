@@ -124,7 +124,7 @@ final class PieMenuController {
         let mainCard = min((2 * .pi * Double(s.radius)) / Double(max(totalMain, 1)), Double(s.cardSize))
         let gap = Double(s.cardGap)
         let stepDeg = 360.0 / Double(max(totalMain, 1))
-        let spanDeg = max(15.0, min(360.0, Double(n) * stepDeg)) / 2.0
+        let spanDeg = max(15.0, min(360.0, Double(n) * stepDeg))
         let spanRad = spanDeg * .pi / 180
         let arcLen = Double(n) * (mainCard + gap)
         let computedRadius = CGFloat(arcLen / spanRad)
@@ -134,7 +134,24 @@ final class PieMenuController {
         let side = radius * 2 + CGFloat(mainCard) + 60
         let frame = NSRect(x: menuCenter.x - side/2, y: menuCenter.y - side/2, width: side, height: side)
 
-        let dir = atan2(menuCenter.y - point.y, point.x - menuCenter.x) * 180 / .pi
+        var dir = atan2(menuCenter.y - point.y, point.x - menuCenter.x) * 180 / .pi
+        if let screen = NSScreen.main {
+            let half = side/2 + 40
+            let left = menuCenter.x - screen.frame.origin.x
+            let right = screen.frame.maxX - menuCenter.x
+            let bottom = menuCenter.y - screen.frame.origin.y
+            let top = screen.frame.maxY - menuCenter.y
+            if min(left, right, bottom, top) < half {
+                let sx = screen.frame.midX
+                let sy = screen.frame.midY
+                var ideal = atan2(sy - menuCenter.y, sx - menuCenter.x)
+                var diff = (dir * .pi / 180) - ideal
+                while diff > .pi { diff -= 2 * .pi }
+                while diff < -.pi { diff += 2 * .pi }
+                diff = max(-.pi/2, min(.pi/2, diff))
+                dir = (ideal + diff) * 180 / .pi
+            }
+        }
         let start = dir - spanDeg / 2
         let arcRange = start...(start + spanDeg)
 
