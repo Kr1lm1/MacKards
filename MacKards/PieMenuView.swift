@@ -85,9 +85,6 @@ struct PieMenuContentView: View {
                     .animation(lp ? nil : .easeIn(duration: 0.1), value: closing)
             } else if let arcRange = arc {
                 ZStack {
-                    ArcShape(radius: radius, thickness: thick, start: arcRange.lowerBound, end: arcRange.upperBound, corner: 1.0)
-                        .fill(outline)
-                        .frame(width: size, height: size)
                     ArcShape(radius: radius, thickness: thick, start: arcRange.lowerBound, end: arcRange.upperBound, corner: 0.5)
                         .fill(lp ? AnyShapeStyle(lpColor) : AnyShapeStyle(settings.menuMaterial))
                         .frame(width: size, height: size)
