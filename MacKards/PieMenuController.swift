@@ -124,13 +124,13 @@ final class PieMenuController {
         let mainCard = min((2 * .pi * Double(s.radius)) / Double(max(totalMain, 1)), Double(s.cardSize))
         let gapSub = Double(s.cardGap) / 4.0
         let stepDeg = 360.0 / Double(max(totalMain, 1))
-        let spanDeg = max(15.0, min(180.0, Double(n) * stepDeg))
-        let minRadius = s.radius + s.ringThickness + 6
+        let spanDeg = max(15.0, min(120.0, Double(n) * stepDeg))
+        let minRadius = s.radius + s.ringThickness * 0.85 + 4
         let arcLenAvailable = 2 * .pi * Double(minRadius) * (spanDeg / 360.0)
         let cardSub = max(24.0, min(mainCard, (arcLenAvailable / Double(max(n, 1))) - gapSub))
         let radius = minRadius
 
-        let side = radius * 2 + CGFloat(cardSub) + 60
+        let side = radius * 2 + CGFloat(cardSub) + 30
         let frame = NSRect(x: menuCenter.x - side/2, y: menuCenter.y - side/2, width: side, height: side)
 
         var dir = atan2(menuCenter.y - point.y, point.x - menuCenter.x) * 180 / .pi
