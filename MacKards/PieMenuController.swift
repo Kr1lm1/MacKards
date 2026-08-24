@@ -109,7 +109,7 @@ final class PieMenuController {
         let mainCard = min((2 * .pi * Double(s.radius)) / Double(max(totalMain, 1)), Double(s.cardSize))
         let gap = Double(s.cardGap)
         let stepDeg = 360.0 / Double(max(totalMain, 1))
-        let spanDeg = max(70.0, min(360.0, Double(n) * stepDeg))
+        let spanDeg = max(30.0, min(360.0, Double(n) * stepDeg))
         let spanRad = spanDeg * .pi / 180
         let arcLen = Double(n) * (mainCard + gap)
         let computedRadius = CGFloat(arcLen / spanRad)

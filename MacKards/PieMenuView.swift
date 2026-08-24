@@ -97,11 +97,12 @@ struct PieMenuContentView: View {
                     let slice = span / Double(max(apps.count, 1))
                     let ang = arcRange.lowerBound + slice * Double(i) + slice / 2
                     let rad = ang * .pi / 180
-                    let r = radius
-                    let cx = cos(rad) * r
-                    let cy = sin(rad) * r
+                    let jump = (hovered == i && !lp) ? 6.0 : 0.0
+                    let rr = radius + jump
+                    let cx = cos(rad) * rr
+                    let cy = sin(rad) * rr
                     cardIcon(i, card)
-                        .frame(width: card, height: card)
+                        .frame(width: thick, height: thick)
                         .contentShape(Circle())
                         .onHover { on in
                             hovered = on ? i : nil
@@ -110,8 +111,6 @@ struct PieMenuContentView: View {
                             }
                         }
                         .offset(x: cx, y: cy)
-                        .scaleEffect(hovered == i ? settings.hoverScale : 1)
-                        .animation(.spring(response: 0.18, dampingFraction: 0.75), value: hovered)
                         .onTapGesture { onSelect(apps[i]) }
                 }
             }
@@ -261,6 +260,14 @@ struct ArcShape: Shape {
         p.addArc(center:c,radius:outer,startAngle:.degrees(start),endAngle:.degrees(end),clockwise:false)
         p.addArc(center:c,radius:inner,startAngle:.degrees(end),endAngle:.degrees(start),clockwise:true)
         p.closeSubpath()
+        let cr = min(thickness * 0.18, thickness/2 - 1)
+        for a in [start, end] {
+            let rad = a * .pi/180
+            let po = CGPoint(x: c.x + cos(rad)*outer, y: c.y + sin(rad)*outer)
+            p.addEllipse(in: CGRect(x: po.x-cr, y: po.y-cr, width: cr*2, height: cr*2))
+            let pi = CGPoint(x: c.x + cos(rad)*inner, y: c.y + sin(rad)*inner)
+            p.addEllipse(in: CGRect(x: pi.x-cr, y: pi.y-cr, width: cr*2, height: cr*2))
+        }
         return p
     }
 }
