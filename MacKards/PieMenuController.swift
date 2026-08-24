@@ -13,10 +13,12 @@ final class PieMenuController {
     private var visible = false
     private var apps: [AppItem] = []
     private var cacheTime: Date = .distantPast
+    private var folderIconCache: [String: NSImage] = [:]
     
     init() {
         NotificationCenter.default.addObserver(forName: .settingsChanged, object: nil, queue: .main) { [weak self] _ in
             self?.cacheTime = .distantPast
+            self?.folderIconCache.removeAll()
         }
     }
     
@@ -29,11 +31,18 @@ final class PieMenuController {
         let mouse = NSEvent.mouseLocation
         let apps = loadApps()
         var actions = s.showActions ? QuickAction.allActions.filter { s.enabledActions.contains($0.id) } : []
-        // Add pinned folders as actions
+        // Add pinned folders as actions (cache icons to avoid re-reading on every open)
         for path in s.pinnedFolderPaths {
             let url = URL(fileURLWithPath: path)
-            let folderIcon = NSWorkspace.shared.icon(forFile: path)
-            folderIcon.size = NSSize(width: 64, height: 64)
+            let folderIcon: NSImage
+            if let cached = folderIconCache[path] {
+                folderIcon = cached
+            } else {
+                let img = NSWorkspace.shared.icon(forFile: path)
+                img.size = NSSize(width: 64, height: 64)
+                folderIconCache[path] = img
+                folderIcon = img
+            }
             actions.append(QuickAction(id: "folder_\(path)", name: url.lastPathComponent, icon: "", targetURL: url, folderImage: folderIcon) {
                 NSWorkspace.shared.open(url)
             })
