@@ -262,7 +262,7 @@ struct ArcShape: Shape {
         let c = CGPoint(x: rect.midX, y: rect.midY)
         let ro = radius + thickness/2
         let ri = max(radius - thickness/2, 1)
-        let cr = min(thickness * 0.35, thickness/2 - 0.5)
+        let cr = min(thickness * 0.26, thickness/2 - 0.5)
         let a0 = start * .pi / 180
         let a1 = end * .pi / 180
         let dO = cr / ro
