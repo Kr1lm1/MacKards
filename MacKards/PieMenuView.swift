@@ -84,13 +84,12 @@ struct PieMenuContentView: View {
                     .animation(lp ? nil : .spring(response: 0.2, dampingFraction: 0.75), value: ringVis)
                     .animation(lp ? nil : .easeIn(duration: 0.1), value: closing)
             } else if let arcRange = arc {
-                let corner = thick * 0.15
                 ZStack {
-                    ArcShape(radius: radius, thickness: thick, start: arcRange.lowerBound, end: arcRange.upperBound, corner: corner + 1.5)
-                        .fill(outline)
+                    ArcShape(radius: radius, thickness: thick, start: arcRange.lowerBound, end: arcRange.upperBound)
+                        .stroke(outline, style: StrokeStyle(lineWidth: thick + 3, lineCap: .round))
                         .frame(width: size, height: size)
-                    ArcShape(radius: radius, thickness: thick, start: arcRange.lowerBound, end: arcRange.upperBound, corner: corner)
-                        .fill(lp ? AnyShapeStyle(lpColor) : AnyShapeStyle(settings.menuMaterial))
+                    ArcShape(radius: radius, thickness: thick, start: arcRange.lowerBound, end: arcRange.upperBound)
+                        .stroke(lp ? AnyShapeStyle(lpColor) : AnyShapeStyle(settings.menuMaterial), style: StrokeStyle(lineWidth: thick, lineCap: .round))
                         .frame(width: size, height: size)
                 }
                 .scaleEffect(ringVis && !subClosing ? 1 : 0.55)
@@ -142,17 +141,36 @@ struct PieMenuContentView: View {
                 let label = h < apps.count ? apps[h].name
                     : h < apps.count + actions.count ? actions[h - apps.count].name
                     : groups[h - apps.count - actions.count].name
+                let off = labelOffset(for: h, card: card)
                 Text(label)
                     .font(.system(size: 13, weight: .medium)).foregroundStyle(.primary)
                     .lineLimit(1).padding(.horizontal, 8).padding(.vertical, 4)
                     .background(Capsule().fill(lp ? AnyShapeStyle(lpColor) : AnyShapeStyle(.thinMaterial)))
                     .frame(maxWidth: radius * 1.2)
+                    .offset(x: off.x, y: off.y)
                     .animation(.easeOut(duration: 0.08), value: hovered)
             }
         }
         .frame(width: size, height: size)
         .scaleEffect(lp ? 1 : menuScale)
         .opacity(lp ? 1 : menuOpacity)
+    }
+    
+    private func labelOffset(for h: Int, card: CGFloat) -> (x: CGFloat, y: CGFloat) {
+        if let arcRange = arc {
+            let span = arcRange.upperBound - arcRange.lowerBound
+            let slice = span / Double(max(apps.count, 1))
+            let ang = arcRange.lowerBound + slice * Double(h) + slice / 2
+            let rad = ang * .pi / 180
+            let labelR = radius + settings.ringThickness/2 + 14
+            return (cos(rad) * labelR, sin(rad) * labelR)
+        } else {
+            let step = 360.0 / Double(max(total, 1))
+            let startA = -90.0 - step * Double(max(total, 1) - 1) / 2
+            let ang = (startA + step * Double(h)) * .pi / 180
+            let labelR = radius + card/2 + 14
+            return (cos(ang) * labelR, sin(ang) * labelR)
+        }
     }
     
     private func pieCard(_ i: Int, card: CGFloat, ring: Bool) -> some View {
@@ -267,30 +285,11 @@ struct DonutShape: Shape {
 }
 
 struct ArcShape: Shape {
-    let radius: CGFloat, thickness: CGFloat, start: Double, end: Double, corner: CGFloat
+    let radius: CGFloat, thickness: CGFloat, start: Double, end: Double
     func path(in rect: CGRect) -> Path {
         let c = CGPoint(x: rect.midX, y: rect.midY)
-        let ro = radius + thickness/2
-        let ri = max(radius - thickness/2, 1)
-        let cr = min(corner, thickness/2 - 0.5, ri/2 - 0.5)
-        let a0 = start * .pi / 180
-        let a1 = end * .pi / 180
-        let dO = cr / ro
-        let dI = cr / ri
-        let C1 = CGPoint(x: c.x + (ro - cr) * cos(a1 - dO), y: c.y + (ro - cr) * sin(a1 - dO))
-        let Q1 = CGPoint(x: c.x + (ro - 2*cr) * cos(a1 - dO), y: c.y + (ro - 2*cr) * sin(a1 - dO))
-        let P1i = CGPoint(x: c.x + ri * cos(a1 - dI), y: c.y + ri * sin(a1 - dI))
-        let C0 = CGPoint(x: c.x + (ro - cr) * cos(a0 + dO), y: c.y + (ro - cr) * sin(a0 + dO))
-        let Q0 = CGPoint(x: c.x + (ro - 2*cr) * cos(a0 + dO), y: c.y + (ro - 2*cr) * sin(a0 + dO))
-        let P0i = CGPoint(x: c.x + ri * cos(a0 + dI), y: c.y + ri * sin(a0 + dI))
         var p = Path()
-        p.addArc(center: c, radius: ro, startAngle: .radians(a0 + dO), endAngle: .radians(a1 - dO), clockwise: false)
-        p.addArc(center: C1, radius: cr, startAngle: .radians(a1 - dO), endAngle: .radians(a1 - dO + .pi), clockwise: false)
-        p.addLine(to: P1i)
-        p.addArc(center: c, radius: ri, startAngle: .radians(a1 - dI), endAngle: .radians(a0 + dI), clockwise: true)
-        p.addLine(to: Q0)
-        p.addArc(center: C0, radius: cr, startAngle: .radians(a0 + dO + .pi), endAngle: .radians(a0 + dO), clockwise: false)
-        p.closeSubpath()
+        p.addArc(center: c, radius: radius, startAngle: .radians(start * .pi / 180), endAngle: .radians(end * .pi / 180), clockwise: false)
         return p
     }
 }
