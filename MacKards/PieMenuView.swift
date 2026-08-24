@@ -83,11 +83,14 @@ struct PieMenuContentView: View {
                     .animation(lp ? nil : .spring(response: 0.2, dampingFraction: 0.75), value: ringVis)
                     .animation(lp ? nil : .easeIn(duration: 0.1), value: closing)
             } else if let arcRange = arc {
+                let ri = max(radius - thick/2, 1)
+                let spanRad = (arcRange.upperBound - arcRange.lowerBound) * .pi / 180
+                let corner = min(thick * 0.3, ri * spanRad * 0.3)
                 ZStack {
-                    ArcShape(radius: radius, thickness: thick, start: arcRange.lowerBound, end: arcRange.upperBound)
+                    ArcShape(radius: radius, thickness: thick, start: arcRange.lowerBound, end: arcRange.upperBound, corner: corner)
                         .stroke(outline, lineWidth: thick + 3)
                         .frame(width: size, height: size)
-                    ArcShape(radius: radius, thickness: thick, start: arcRange.lowerBound, end: arcRange.upperBound)
+                    ArcShape(radius: radius, thickness: thick, start: arcRange.lowerBound, end: arcRange.upperBound, corner: corner)
                         .stroke(lp ? AnyShapeStyle(lpColor) : AnyShapeStyle(settings.menuMaterial), lineWidth: thick)
                         .frame(width: size, height: size)
                 }
@@ -261,12 +264,12 @@ struct DonutShape: Shape {
 }
 
 struct ArcShape: Shape {
-    let radius: CGFloat, thickness: CGFloat, start: Double, end: Double
+    let radius: CGFloat, thickness: CGFloat, start: Double, end: Double, corner: CGFloat
     func path(in rect: CGRect) -> Path {
         let c = CGPoint(x: rect.midX, y: rect.midY)
         let ro = radius + thickness/2
         let ri = max(radius - thickness/2, 1)
-        let cr = min(thickness * 0.3, thickness/2 - 0.5)
+        let cr = min(corner, thickness/2 - 0.5, ri/2 - 0.5)
         let a0 = start * .pi / 180
         let a1 = end * .pi / 180
         let dO = cr / ro
