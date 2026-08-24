@@ -113,7 +113,7 @@ final class PieMenuController {
         let spanRad = spanDeg * .pi / 180
         let arcLen = Double(n) * (mainCard + gap)
         let computedRadius = CGFloat(arcLen / spanRad)
-        let minRadius = s.radius + CGFloat(mainCard)/2 + s.ringThickness/2 + 10
+        let minRadius = s.radius + CGFloat(mainCard)/2 + s.ringThickness * 0.3
         let radius = max(computedRadius, minRadius)
 
         let side = radius * 2 + CGFloat(mainCard) + 60

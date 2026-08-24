@@ -68,14 +68,14 @@ struct PieMenuContentView: View {
         let ring = settings.menuStyle == 1 && arc == nil
         let thick = settings.ringThickness
         let closing = state.isClosing
-        
+
         return ZStack {
             if ring {
                 let outer = radius + thick/2, inner = max(radius - thick/2, 10)
                 DonutShape(outerRadius: outer, innerRadius: inner)
                     .fill(lp ? AnyShapeStyle(lpColor) : settings.menuMaterial)
                     .frame(width: size, height: size)
-                    .overlay(DonutShape(outerRadius: outer, innerRadius: inner).stroke(Color.primary.opacity(0.1), lineWidth: 0.5).frame(width: size, height: size))
+                    .overlay(DonutShape(outerRadius: outer, innerRadius: inner).stroke(Color.primary.opacity(0.25), lineWidth: 1.5).frame(width: size, height: size))
                     .scaleEffect(ringVis && !closing ? 1 : 0.85)
                     .opacity(ringVis && !closing ? 1 : 0)
                     .animation(lp ? nil : .spring(response: 0.2, dampingFraction: 0.75), value: ringVis)
@@ -84,18 +84,43 @@ struct PieMenuContentView: View {
                 ArcShape(thickness: thick, start: arcRange.lowerBound, end: arcRange.upperBound)
                     .fill(lp ? AnyShapeStyle(lpColor) : settings.menuMaterial)
                     .frame(width: size, height: size)
+                    .overlay(ArcShape(thickness: thick, start: arcRange.lowerBound, end: arcRange.upperBound).stroke(Color.primary.opacity(0.25), lineWidth: 1.5).frame(width: size, height: size))
                     .scaleEffect(ringVis && !closing ? 1 : 0.85)
                     .opacity(ringVis && !closing ? 1 : 0)
                     .animation(lp ? nil : .spring(response: 0.2, dampingFraction: 0.75), value: ringVis)
                     .animation(lp ? nil : .easeIn(duration: 0.1), value: closing)
+
+                ForEach(0..<apps.count, id: \.self) { i in
+                    let span = arcRange.upperBound - arcRange.lowerBound
+                    let slice = span / Double(max(apps.count, 1))
+                    let ang = arcRange.lowerBound + slice * Double(i) + slice / 2
+                    let rad = ang * .pi / 180
+                    let r = radius
+                    let cx = cos(rad) * r
+                    let cy = sin(rad) * r
+                    cardIcon(i, card)
+                        .frame(width: card, height: card)
+                        .offset(x: cx, y: cy)
+                        .scaleEffect(hovered == i ? settings.hoverScale : 1)
+                        .animation(.spring(response: 0.18, dampingFraction: 0.75), value: hovered)
+                        .onTapGesture { onSelect(apps[i]) }
+                        .onHover { on in
+                            hovered = on ? i : nil
+                            if on, settings.haptics {
+                                NSHapticFeedbackManager.defaultPerformer.perform([.levelChange,.generic,.alignment][settings.hapticStyle], performanceTime: .now)
+                            }
+                        }
+                }
             }
-            
-            ForEach(0..<total, id: \.self) { i in pieCard(i, card: card, ring: ring) }
-            
+
+            if arc == nil {
+                ForEach(0..<total, id: \.self) { i in pieCard(i, card: card, ring: ring) }
+            }
+
             if total == 0 {
                 Text("No apps in group").font(.system(size: 12)).foregroundStyle(.secondary)
             }
-            
+
             if settings.showLabels, let h = hovered {
                 let label = h < apps.count ? apps[h].name
                     : h < apps.count + actions.count ? actions[h - apps.count].name
@@ -230,7 +255,7 @@ struct ArcShape: Shape {
         let c=CGPoint(x:rect.midX,y:rect.midY)
         let rm = min(rect.width, rect.height)/2 - thickness/2
         let outer = rm + thickness/2, inner = rm - thickness/2
-        let cap = thickness * 0.5
+        let cap = thickness * 0.35
         var p=Path()
         p.addArc(center:c,radius:outer,startAngle:.degrees(start),endAngle:.degrees(end),clockwise:false)
         p.addArc(center:c,radius:inner,startAngle:.degrees(end),endAngle:.degrees(start),clockwise:true)
