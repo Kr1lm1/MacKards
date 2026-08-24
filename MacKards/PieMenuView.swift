@@ -68,6 +68,7 @@ struct PieMenuContentView: View {
         let size = radius * 2 + card + 60
         let ring = settings.menuStyle == 1 && arc == nil
         let thick = settings.ringThickness
+        let arcThick = thick * 0.65
         let closing = state.isClosing
         let outline = Color.primary.opacity(0.25)
 
@@ -83,12 +84,13 @@ struct PieMenuContentView: View {
                     .animation(lp ? nil : .spring(response: 0.2, dampingFraction: 0.75), value: ringVis)
                     .animation(lp ? nil : .easeIn(duration: 0.1), value: closing)
             } else if let arcRange = arc {
+                let at = arcThick
                 ZStack {
-                    ArcShape(radius: radius, thickness: thick, start: arcRange.lowerBound, end: arcRange.upperBound)
-                        .stroke(outline, lineWidth: thick + 3)
+                    ArcShape(radius: radius, thickness: at, start: arcRange.lowerBound, end: arcRange.upperBound)
+                        .stroke(outline, lineWidth: at + 3)
                         .frame(width: size, height: size)
-                    ArcShape(radius: radius, thickness: thick, start: arcRange.lowerBound, end: arcRange.upperBound)
-                        .stroke(lp ? AnyShapeStyle(lpColor) : AnyShapeStyle(settings.menuMaterial), lineWidth: thick)
+                    ArcShape(radius: radius, thickness: at, start: arcRange.lowerBound, end: arcRange.upperBound)
+                        .stroke(lp ? AnyShapeStyle(lpColor) : AnyShapeStyle(settings.menuMaterial), lineWidth: at)
                         .frame(width: size, height: size)
                 }
                 .scaleEffect(ringVis && !closing ? 1 : 0.85)
@@ -107,7 +109,7 @@ struct PieMenuContentView: View {
                     let cx = cos(rad) * rr
                     let cy = sin(rad) * rr
                     cardIcon(i, card)
-                        .frame(width: thick, height: thick)
+                        .frame(width: arcThick, height: arcThick)
                         .contentShape(Circle())
                         .onHover { on in
                             hovered = on ? i : nil
