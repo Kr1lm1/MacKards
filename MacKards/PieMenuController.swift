@@ -14,6 +14,7 @@ final class PieMenuController {
     private var visible = false
     private var menuCenter: NSPoint = .zero
     private var submenuMonitor: Any?
+    private var submenuIconRects: [CGRect] = []
     private var apps: [AppItem] = []
     private var cacheTime: Date = .distantPast
     private let iconCache = NSCache<NSString, NSImage>()
@@ -112,7 +113,7 @@ final class PieMenuController {
         let spanRad = spanDeg * .pi / 180
         let arcLen = Double(n) * (mainCard + gap)
         let computedRadius = CGFloat(arcLen / spanRad)
-        let minRadius = s.radius + s.ringThickness + CGFloat(s.cardGap) + CGFloat(mainCard)/2
+        let minRadius = s.radius + CGFloat(mainCard)/2 + s.ringThickness/2 + 10
         let radius = max(computedRadius, minRadius)
 
         let side = radius * 2 + CGFloat(mainCard) + 60
@@ -137,16 +138,31 @@ final class PieMenuController {
         self.submenuWindow = win
         win.orderFrontRegardless()
 
+        let nn = Double(apps.count)
+        let baseCard = min((2 * .pi * Double(radius) - Double(gap) * nn) / max(nn, 1), Double(s.cardSize))
+        var rects: [CGRect] = []
+        for i in 0..<apps.count {
+            let aa = (dir - spanDeg/2) + (spanDeg/max(nn, 1)) * Double(i) + (spanDeg/max(nn, 1))/2
+            let rad = aa * .pi/180
+            let icx = menuCenter.x + CGFloat(cos(rad) * Double(radius))
+            let icy = menuCenter.y + CGFloat(sin(rad) * Double(radius))
+            let half = CGFloat(baseCard)/2 + 8
+            rects.append(CGRect(x: icx - half, y: icy - half, width: half*2, height: half*2))
+        }
+        self.submenuIconRects = rects
+
         submenuMonitor = NSEvent.addLocalMonitorForEvents(matching: .leftMouseDown) { [weak self] e in
-            if let w = self?.submenuWindow, !w.frame.contains(NSEvent.mouseLocation) {
-                self?.closeSubmenu()
-            }
+            guard let self else { return e }
+            let pt = NSEvent.mouseLocation
+            let onIcon = self.submenuIconRects.contains { $0.contains(pt) }
+            if !onIcon { self.closeSubmenu() }
             return e
         }
     }
 
     private func closeSubmenu() {
         if let m = submenuMonitor { NSEvent.removeMonitor(m); submenuMonitor = nil }
+        submenuIconRects = []
         guard let win = submenuWindow else { return }
         submenuWindow = nil
         win.orderOut(nil)

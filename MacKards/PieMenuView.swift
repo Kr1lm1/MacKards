@@ -230,7 +230,7 @@ struct ArcShape: Shape {
         let c=CGPoint(x:rect.midX,y:rect.midY)
         let rm = min(rect.width, rect.height)/2 - thickness/2
         let outer = rm + thickness/2, inner = rm - thickness/2
-        let cap = thickness * 0.3
+        let cap = thickness * 0.5
         var p=Path()
         p.addArc(center:c,radius:outer,startAngle:.degrees(start),endAngle:.degrees(end),clockwise:false)
         p.addArc(center:c,radius:inner,startAngle:.degrees(end),endAngle:.degrees(start),clockwise:true)
