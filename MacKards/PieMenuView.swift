@@ -81,10 +81,10 @@ struct PieMenuContentView: View {
                     .animation(lp ? nil : .spring(response: 0.2, dampingFraction: 0.75), value: ringVis)
                     .animation(lp ? nil : .easeIn(duration: 0.1), value: closing)
             } else if let arcRange = arc {
-                ArcShape(thickness: thick, start: arcRange.lowerBound, end: arcRange.upperBound)
+                ArcShape(radius: radius, thickness: thick, start: arcRange.lowerBound, end: arcRange.upperBound)
                     .fill(lp ? AnyShapeStyle(lpColor) : settings.menuMaterial)
                     .frame(width: size, height: size)
-                    .overlay(ArcShape(thickness: thick, start: arcRange.lowerBound, end: arcRange.upperBound).stroke(Color.primary.opacity(0.25), lineWidth: 1.5).frame(width: size, height: size))
+                    .overlay(ArcShape(radius: radius, thickness: thick, start: arcRange.lowerBound, end: arcRange.upperBound).stroke(Color.primary.opacity(0.25), lineWidth: 1.5).frame(width: size, height: size))
                     .scaleEffect(ringVis && !closing ? 1 : 0.85)
                     .opacity(ringVis && !closing ? 1 : 0)
                     .animation(lp ? nil : .spring(response: 0.2, dampingFraction: 0.75), value: ringVis)
@@ -250,21 +250,14 @@ struct DonutShape: Shape {
 }
 
 struct ArcShape: Shape {
-    let thickness: CGFloat, start: Double, end: Double
+    let radius: CGFloat, thickness: CGFloat, start: Double, end: Double
     func path(in rect: CGRect) -> Path {
         let c=CGPoint(x:rect.midX,y:rect.midY)
-        let rm = min(rect.width, rect.height)/2 - thickness/2
-        let outer = rm + thickness/2, inner = rm - thickness/2
-        let cap = thickness * 0.35
+        let outer = radius + thickness/2, inner = max(radius - thickness/2, 1)
         var p=Path()
         p.addArc(center:c,radius:outer,startAngle:.degrees(start),endAngle:.degrees(end),clockwise:false)
         p.addArc(center:c,radius:inner,startAngle:.degrees(end),endAngle:.degrees(start),clockwise:true)
         p.closeSubpath()
-        for a in [start, end] {
-            let rad = a * .pi/180
-            let cx = c.x + cos(rad)*rm, cy = c.y + sin(rad)*rm
-            p.addEllipse(in: CGRect(x: cx-cap, y: cy-cap, width: cap*2, height: cap*2))
-        }
         return p
     }
 }
