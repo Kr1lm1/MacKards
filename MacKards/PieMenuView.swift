@@ -13,6 +13,7 @@ struct PieMenuContentView: View {
     let onGroup: (AppGroup) -> Void
     var arc: ClosedRange<Double>? = nil
     var radiusOverride: CGFloat? = nil
+    var cardSizeOverride: CGFloat? = nil
     
     @State private var shown = 0
     @State private var hovered: Int? = nil
@@ -63,7 +64,7 @@ struct PieMenuContentView: View {
         let n = CGFloat(max(total, 1)), lp = settings.lowPower
         let baseR = settings.radius
         let circ = 2 * .pi * baseR
-        let card = min((circ - settings.cardGap * n) / n, settings.cardSize)
+        let card = cardSizeOverride ?? min((circ - settings.cardGap * n) / n, settings.cardSize)
         let size = radius * 2 + card + 60
         let ring = settings.menuStyle == 1 && arc == nil
         let thick = settings.ringThickness
@@ -254,10 +255,16 @@ struct ArcShape: Shape {
     func path(in rect: CGRect) -> Path {
         let c=CGPoint(x:rect.midX,y:rect.midY)
         let outer = radius + thickness/2, inner = max(radius - thickness/2, 1)
+        let cap = thickness * 0.15
         var p=Path()
         p.addArc(center:c,radius:outer,startAngle:.degrees(start),endAngle:.degrees(end),clockwise:false)
         p.addArc(center:c,radius:inner,startAngle:.degrees(end),endAngle:.degrees(start),clockwise:true)
         p.closeSubpath()
+        for a in [start, end] {
+            let rad = a * .pi/180
+            let cx = c.x + cos(rad)*radius, cy = c.y + sin(rad)*radius
+            p.addEllipse(in: CGRect(x: cx-cap, y: cy-cap, width: cap*2, height: cap*2))
+        }
         return p
     }
 }
