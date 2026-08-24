@@ -232,42 +232,7 @@ struct SettingsView: View {
                                 }.buttonStyle(.plain)
                             }.padding(.vertical, 2).contentShape(Rectangle())
                         }.onMove { from, to in settings.pinnedAppPaths.move(fromOffsets: from, toOffset: to) }
-                    }.listStyle(.plain).frame(minHeight: 120, maxHeight: 280)
-                    // Drop zone
-                    RoundedRectangle(cornerRadius: 8)
-                        .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [5, 3]))
-                        .foregroundColor(.secondary.opacity(0.3))
-                        .frame(height: 100)
-                        .frame(maxWidth: .infinity)
-                        .overlay(
-                            VStack(spacing: 4) {
-                                Image(systemName: "plus.app").font(.system(size: 16)).foregroundColor(.secondary.opacity(0.5))
-                                Text("Drop .app or folder here").font(.system(size: 11)).foregroundColor(.secondary)
-                            }
-                        )
-                        .padding(.vertical, 4)
-                        .onDrop(of: [.fileURL], isTargeted: nil) { providers in
-                            for p in providers {
-                                p.loadItem(forTypeIdentifier: "public.file-url", options: nil) { item, _ in
-                                    guard let data = item as? Data,
-                                          let url = URL(dataRepresentation: data, relativeTo: nil) else { return }
-                                    DispatchQueue.main.async {
-                                        if url.pathExtension == "app" {
-                                            if !settings.pinnedAppPaths.contains(url.path) {
-                                                settings.pinnedAppPaths.append(url.path)
-                                            }
-                                        } else {
-                                            var isDir: ObjCBool = false
-                                            if FileManager.default.fileExists(atPath: url.path, isDirectory: &isDir), isDir.boolValue {
-                                                if !settings.pinnedFolderPaths.contains(url.path) {
-                                                    settings.pinnedFolderPaths.append(url.path)
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }; return true
-                        }
+                    }.listStyle(.plain).frame(minHeight: 80, maxHeight: 260)
                 }
 
                 // Groups
@@ -329,6 +294,35 @@ struct SettingsView: View {
                             }
                     }
                 }
+
+                // Drop zone for apps (bottom)
+                RoundedRectangle(cornerRadius: 8)
+                    .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [5, 3]))
+                    .foregroundColor(.secondary.opacity(0.3))
+                    .frame(height: 100)
+                    .frame(maxWidth: .infinity)
+                    .overlay(
+                        VStack(spacing: 4) {
+                            Image(systemName: "plus.app").font(.system(size: 16)).foregroundColor(.secondary.opacity(0.5))
+                            Text("Drop .app here").font(.system(size: 11)).foregroundColor(.secondary)
+                        }
+                    )
+                    .padding(.vertical, 4)
+                    .onDrop(of: [.fileURL], isTargeted: nil) { providers in
+                        for p in providers {
+                            p.loadItem(forTypeIdentifier: "public.file-url", options: nil) { item, _ in
+                                guard let data = item as? Data,
+                                      let url = URL(dataRepresentation: data, relativeTo: nil) else { return }
+                                DispatchQueue.main.async {
+                                    if url.pathExtension == "app" {
+                                        if !settings.pinnedAppPaths.contains(url.path) {
+                                            settings.pinnedAppPaths.append(url.path)
+                                        }
+                                    }
+                                }
+                            }
+                        }; return true
+                    }
             }.padding(18)
         }
     }

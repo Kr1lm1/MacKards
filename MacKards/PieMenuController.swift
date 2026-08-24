@@ -13,6 +13,7 @@ final class PieMenuController {
     private var submenuWindow: NSWindow?
     private var visible = false
     private var menuCenter: NSPoint = .zero
+    private var submenuMonitor: Any?
     private var apps: [AppItem] = []
     private var cacheTime: Date = .distantPast
     private let iconCache = NSCache<NSString, NSImage>()
@@ -110,7 +111,9 @@ final class PieMenuController {
         let spanDeg = max(70.0, min(360.0, Double(n) * stepDeg))
         let spanRad = spanDeg * .pi / 180
         let arcLen = Double(n) * (mainCard + gap)
-        let radius = CGFloat(arcLen / spanRad)
+        let computedRadius = CGFloat(arcLen / spanRad)
+        let minRadius = s.radius + s.ringThickness + CGFloat(s.cardGap) + CGFloat(mainCard)/2
+        let radius = max(computedRadius, minRadius)
 
         let side = radius * 2 + CGFloat(mainCard) + 60
         let frame = NSRect(x: menuCenter.x - side/2, y: menuCenter.y - side/2, width: side, height: side)
@@ -133,9 +136,17 @@ final class PieMenuController {
         win.contentView = host
         self.submenuWindow = win
         win.orderFrontRegardless()
+
+        submenuMonitor = NSEvent.addLocalMonitorForEvents(matching: .leftMouseDown) { [weak self] e in
+            if let w = self?.submenuWindow, !w.frame.contains(NSEvent.mouseLocation) {
+                self?.closeSubmenu()
+            }
+            return e
+        }
     }
 
     private func closeSubmenu() {
+        if let m = submenuMonitor { NSEvent.removeMonitor(m); submenuMonitor = nil }
         guard let win = submenuWindow else { return }
         submenuWindow = nil
         win.orderOut(nil)
