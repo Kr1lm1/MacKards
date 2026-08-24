@@ -6,6 +6,7 @@ final class PieMenuState: ObservableObject {
     @Published var hoveredApp: AppItem?
     @Published var hoveredAction: QuickAction?
     @Published var isClosing = false
+    @Published var isSubmenuClosing = false
 }
 
 final class PieMenuController {
@@ -109,6 +110,7 @@ final class PieMenuController {
     private func openSubmenu(group: AppGroup, at point: NSPoint, totalMain: Int, groupIndex: Int) {
         if submenuWindow != nil, submenuGroupIndex == groupIndex { closeSubmenu(); return }
         closeSubmenu()
+        PieMenuState.shared.isSubmenuClosing = false
         submenuGroupIndex = groupIndex
         let s = AppSettings.shared
         let apps = group.paths.compactMap { path -> AppItem? in
@@ -126,7 +128,7 @@ final class PieMenuController {
         let spanRad = spanDeg * .pi / 180
         let arcLen = Double(n) * (mainCard + gap)
         let computedRadius = CGFloat(arcLen / spanRad)
-        let minRadius = s.radius + s.ringThickness * 0.12 + 1
+        let minRadius = s.radius + s.ringThickness * 0.06 + 1
         let radius = max(computedRadius, minRadius)
 
         let side = radius * 2 + CGFloat(mainCard) + 60
@@ -216,7 +218,11 @@ final class PieMenuController {
         submenuGroupIndex = nil
         guard let win = submenuWindow else { return }
         submenuWindow = nil
-        win.orderOut(nil)
+        PieMenuState.shared.isSubmenuClosing = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.16) {
+            win.orderOut(nil)
+            PieMenuState.shared.isSubmenuClosing = false
+        }
     }
 
     private func cachedIcon(for path: String) -> NSImage {

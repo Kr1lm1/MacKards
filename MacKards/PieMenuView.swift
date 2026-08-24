@@ -69,6 +69,7 @@ struct PieMenuContentView: View {
         let ring = settings.menuStyle == 1 && arc == nil
         let thick = settings.ringThickness
         let closing = state.isClosing
+        let subClosing = state.isSubmenuClosing
         let outline = Color.primary.opacity(0.125)
 
         return ZStack {
@@ -83,7 +84,7 @@ struct PieMenuContentView: View {
                     .animation(lp ? nil : .spring(response: 0.2, dampingFraction: 0.75), value: ringVis)
                     .animation(lp ? nil : .easeIn(duration: 0.1), value: closing)
             } else if let arcRange = arc {
-                let corner = thick * 0.25
+                let corner = 0.5
                 ZStack {
                     ArcShape(radius: radius, thickness: thick, start: arcRange.lowerBound, end: arcRange.upperBound, corner: corner + 1.5)
                         .fill(outline)
@@ -92,21 +93,24 @@ struct PieMenuContentView: View {
                         .fill(lp ? AnyShapeStyle(lpColor) : AnyShapeStyle(settings.menuMaterial))
                         .frame(width: size, height: size)
                 }
-                .scaleEffect(ringVis && !closing ? 1 : 0.85)
-                .opacity(ringVis && !closing ? 1 : 0)
+                .scaleEffect(ringVis && !subClosing ? 1 : 0.55)
+                .opacity(ringVis && !subClosing ? 1 : 0)
                 .animation(lp ? nil : .spring(response: 0.2, dampingFraction: 0.75), value: ringVis)
-                .animation(lp ? nil : .easeIn(duration: 0.1), value: closing)
+                .animation(lp ? nil : .easeIn(duration: 0.14), value: subClosing)
 
                 ForEach(0..<apps.count, id: \.self) { i in
                     let span = arcRange.upperBound - arcRange.lowerBound
                     let slice = span / Double(max(apps.count, 1))
                     let ang = arcRange.lowerBound + slice * Double(i) + slice / 2
                     let rad = ang * .pi / 180
-                    let vis = i < shown && !closing
+                    let vis = i < shown && !subClosing
                     let jump = (hovered == i && !lp) ? 6.0 : 0.0
                     let rr = radius + jump
                     let cx = cos(rad) * rr
                     let cy = sin(rad) * rr
+                    let mid = (arcRange.lowerBound + arcRange.upperBound) / 2 * .pi / 180
+                    let ox = cos(mid) * radius
+                    let oy = sin(mid) * radius
                     cardIcon(i, card)
                         .frame(width: thick, height: thick)
                         .contentShape(Circle())
@@ -116,7 +120,7 @@ struct PieMenuContentView: View {
                                 NSHapticFeedbackManager.defaultPerformer.perform([.levelChange,.generic,.alignment][settings.hapticStyle], performanceTime: .now)
                             }
                         }
-                        .offset(x: cx, y: cy)
+                        .offset(x: vis ? cx : ox, y: vis ? cy : oy)
                         .scaleEffect(vis ? 1 : 0.01)
                         .opacity(vis ? 1 : 0)
                         .animation(.spring(response: 0.18, dampingFraction: 0.75), value: hovered)
