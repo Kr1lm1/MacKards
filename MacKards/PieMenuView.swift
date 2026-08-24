@@ -69,6 +69,7 @@ struct PieMenuContentView: View {
         let ring = settings.menuStyle == 1 && arc == nil
         let thick = settings.ringThickness
         let closing = state.isClosing
+        let outline = Color.primary.opacity(0.5)
 
         return ZStack {
             if ring {
@@ -76,6 +77,7 @@ struct PieMenuContentView: View {
                 DonutShape(outerRadius: outer, innerRadius: inner)
                     .fill(lp ? AnyShapeStyle(lpColor) : settings.menuMaterial)
                     .frame(width: size, height: size)
+                    .overlay(DonutShape(outerRadius: outer, innerRadius: inner).stroke(outline, lineWidth: 1.5).frame(width: size, height: size))
                     .scaleEffect(ringVis && !closing ? 1 : 0.85)
                     .opacity(ringVis && !closing ? 1 : 0)
                     .animation(lp ? nil : .spring(response: 0.2, dampingFraction: 0.75), value: ringVis)
@@ -84,6 +86,7 @@ struct PieMenuContentView: View {
                 ArcShape(radius: radius, thickness: thick, start: arcRange.lowerBound, end: arcRange.upperBound)
                     .fill(lp ? AnyShapeStyle(lpColor) : settings.menuMaterial)
                     .frame(width: size, height: size)
+                    .overlay(ArcShape(radius: radius, thickness: thick, start: arcRange.lowerBound, end: arcRange.upperBound).stroke(outline, lineWidth: 1.5).frame(width: size, height: size))
                     .scaleEffect(ringVis && !closing ? 1 : 0.85)
                     .opacity(ringVis && !closing ? 1 : 0)
                     .animation(lp ? nil : .spring(response: 0.2, dampingFraction: 0.75), value: ringVis)
@@ -98,6 +101,7 @@ struct PieMenuContentView: View {
                     let cx = cos(rad) * r
                     let cy = sin(rad) * r
                     cardIcon(i, card)
+                        .frame(width: card, height: card)
                         .contentShape(Circle())
                         .onHover { on in
                             hovered = on ? i : nil
@@ -253,16 +257,10 @@ struct ArcShape: Shape {
     func path(in rect: CGRect) -> Path {
         let c=CGPoint(x:rect.midX,y:rect.midY)
         let outer = radius + thickness/2, inner = max(radius - thickness/2, 1)
-        let cap = thickness * 0.15
         var p=Path()
         p.addArc(center:c,radius:outer,startAngle:.degrees(start),endAngle:.degrees(end),clockwise:false)
         p.addArc(center:c,radius:inner,startAngle:.degrees(end),endAngle:.degrees(start),clockwise:true)
         p.closeSubpath()
-        for a in [start, end] {
-            let rad = a * .pi/180
-            let cx = c.x + cos(rad)*radius, cy = c.y + sin(rad)*radius
-            p.addEllipse(in: CGRect(x: cx-cap, y: cy-cap, width: cap*2, height: cap*2))
-        }
         return p
     }
 }
