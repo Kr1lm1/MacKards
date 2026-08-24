@@ -122,7 +122,7 @@ final class PieMenuController {
 
         // Keep the same density (card size + gap) as the main ring
         let mainCard = min((2 * .pi * Double(s.radius)) / Double(max(totalMain, 1)), Double(s.cardSize))
-        let gapSub = Double(s.cardGap) / 4.0
+        let gapSub = Double(s.cardGap) / 8.0
         let stepDeg = 360.0 / Double(max(totalMain, 1))
         let spanDeg = max(15.0, min(120.0, Double(n) * stepDeg))
         let minRadius = s.radius + s.ringThickness + 6
