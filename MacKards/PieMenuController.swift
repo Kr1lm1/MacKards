@@ -109,7 +109,7 @@ final class PieMenuController {
 
     private func openSubmenu(group: AppGroup, at point: NSPoint, totalMain: Int, groupIndex: Int) {
         if submenuWindow != nil, submenuGroupIndex == groupIndex { closeSubmenu(); return }
-        closeSubmenu()
+        if submenuWindow != nil { closeOldSubmenuImmediately() }
         PieMenuState.shared.isSubmenuClosing = false
         submenuGroupIndex = groupIndex
         let s = AppSettings.shared
@@ -125,7 +125,7 @@ final class PieMenuController {
         let gapSub = Double(s.cardGap) / 4.0
         let stepDeg = 360.0 / Double(max(totalMain, 1))
         let spanDeg = max(15.0, min(120.0, Double(n) * stepDeg))
-        let minRadius = s.radius + s.ringThickness * 0.85 + 4
+        let minRadius = s.radius + s.ringThickness + 6
         let arcLenAvailable = 2 * .pi * Double(minRadius) * (spanDeg / 360.0)
         let cardSub = max(24.0, min(mainCard, (arcLenAvailable / Double(max(n, 1))) - gapSub))
         let radius = minRadius
@@ -225,6 +225,17 @@ final class PieMenuController {
             return
         }
         closeSubmenu()
+    }
+
+    private func closeOldSubmenuImmediately() {
+        if let m = submenuMonitor { NSEvent.removeMonitor(m); submenuMonitor = nil }
+        if let m = submenuGlobalMonitor { NSEvent.removeMonitor(m); submenuGlobalMonitor = nil }
+        submenuIconRects = []
+        submenuGroupIndex = nil
+        PieMenuState.shared.isSubmenuClosing = false
+        guard let win = submenuWindow else { return }
+        submenuWindow = nil
+        win.orderOut(nil)
     }
 
     private func closeSubmenu() {
