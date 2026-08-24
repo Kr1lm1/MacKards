@@ -69,7 +69,7 @@ struct PieMenuContentView: View {
         let ring = settings.menuStyle == 1 && arc == nil
         let thick = settings.ringThickness
         let closing = state.isClosing
-        let outline = Color.primary.opacity(0.5)
+        let outline = Color.primary.opacity(0.25)
 
         return ZStack {
             if ring {
@@ -260,14 +260,6 @@ struct ArcShape: Shape {
         p.addArc(center:c,radius:outer,startAngle:.degrees(start),endAngle:.degrees(end),clockwise:false)
         p.addArc(center:c,radius:inner,startAngle:.degrees(end),endAngle:.degrees(start),clockwise:true)
         p.closeSubpath()
-        let cr = min(thickness * 0.18, thickness/2 - 1)
-        for a in [start, end] {
-            let rad = a * .pi/180
-            let po = CGPoint(x: c.x + cos(rad)*outer, y: c.y + sin(rad)*outer)
-            p.addEllipse(in: CGRect(x: po.x-cr, y: po.y-cr, width: cr*2, height: cr*2))
-            let pi = CGPoint(x: c.x + cos(rad)*inner, y: c.y + sin(rad)*inner)
-            p.addEllipse(in: CGRect(x: pi.x-cr, y: pi.y-cr, width: cr*2, height: cr*2))
-        }
         return p
     }
 }
