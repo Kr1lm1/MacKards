@@ -97,6 +97,7 @@ struct PieMenuContentView: View {
                     let slice = span / Double(max(apps.count, 1))
                     let ang = arcRange.lowerBound + slice * Double(i) + slice / 2
                     let rad = ang * .pi / 180
+                    let vis = i < shown && !closing
                     let jump = (hovered == i && !lp) ? 6.0 : 0.0
                     let rr = radius + jump
                     let cx = cos(rad) * rr
@@ -111,6 +112,10 @@ struct PieMenuContentView: View {
                             }
                         }
                         .offset(x: cx, y: cy)
+                        .scaleEffect(vis ? 1 : 0.01)
+                        .opacity(vis ? 1 : 0)
+                        .animation(.spring(response: 0.18, dampingFraction: 0.75), value: hovered)
+                        .animation(.spring(response: 0.16, dampingFraction: 0.8), value: shown)
                         .onTapGesture { onSelect(apps[i]) }
                 }
             }
@@ -254,11 +259,21 @@ struct DonutShape: Shape {
 struct ArcShape: Shape {
     let radius: CGFloat, thickness: CGFloat, start: Double, end: Double
     func path(in rect: CGRect) -> Path {
-        let c=CGPoint(x:rect.midX,y:rect.midY)
-        let outer = radius + thickness/2, inner = max(radius - thickness/2, 1)
-        var p=Path()
-        p.addArc(center:c,radius:outer,startAngle:.degrees(start),endAngle:.degrees(end),clockwise:false)
-        p.addArc(center:c,radius:inner,startAngle:.degrees(end),endAngle:.degrees(start),clockwise:true)
+        let c = CGPoint(x: rect.midX, y: rect.midY)
+        let ro = radius + thickness/2
+        let ri = max(radius - thickness/2, 1)
+        let cr = min(thickness * 0.35, thickness/2 - 0.5)
+        let a0 = start * .pi / 180
+        let a1 = end * .pi / 180
+        let dO = cr / ro
+        let dI = cr / ri
+        let C1 = CGPoint(x: c.x + cos(a1 - dO) * (ro - cr), y: c.y + sin(a1 - dO) * (ro - cr))
+        let C0 = CGPoint(x: c.x + cos(a0 + dO) * (ro - cr), y: c.y + sin(a0 + dO) * (ro - cr))
+        var p = Path()
+        p.addArc(center: c, radius: ro, startAngle: .radians(a0 + dO), endAngle: .radians(a1 - dO), clockwise: false)
+        p.addArc(center: C1, radius: cr, startAngle: .radians(a1 - dO), endAngle: .radians(a1 - dO + .pi), clockwise: false)
+        p.addArc(center: c, radius: ri, startAngle: .radians(a1 - dI), endAngle: .radians(a0 + dI), clockwise: true)
+        p.addArc(center: C0, radius: cr, startAngle: .radians(a0 + dO + .pi), endAngle: .radians(a0 + dO), clockwise: false)
         p.closeSubpath()
         return p
     }
