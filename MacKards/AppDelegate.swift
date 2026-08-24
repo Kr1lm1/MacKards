@@ -63,7 +63,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if let w = settingsWindow, w.isVisible {
             w.makeKeyAndOrderFront(nil); NSApp.activate(ignoringOtherApps: true); return
         }
-        let w = NSWindow(contentRect: .init(x: 0, y: 0, width: 520, height: 480),
+        let w = NSWindow(contentRect: .init(x: 0, y: 0, width: 520, height: 560),
                          styleMask: [.titled, .closable, .miniaturizable], backing: .buffered, defer: false)
         w.center(); w.title = "MacKards"
         w.isReleasedWhenClosed = false

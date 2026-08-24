@@ -114,7 +114,7 @@ final class PieMenuController {
         let frame = NSRect(x: point.x - side/2, y: point.y - side/2, width: side, height: side)
 
         let center = NSScreen.main?.frame ?? .zero
-        let dir = atan2(point.y - center.midY, point.x - center.midX) * 180 / .pi
+        let dir = atan2(center.midY - point.y, point.x - center.midX) * 180 / .pi
         let start = dir - spanDeg / 2
         let arcRange = start...(start + spanDeg)
 
