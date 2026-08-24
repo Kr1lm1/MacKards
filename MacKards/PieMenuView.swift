@@ -273,7 +273,7 @@ struct ArcShape: Shape {
         p.addArc(center: c, radius: ro, startAngle: .radians(a0 + dO), endAngle: .radians(a1 - dO), clockwise: false)
         p.addArc(center: C1, radius: cr, startAngle: .radians(a1 - dO), endAngle: .radians(a1 - dO + .pi), clockwise: false)
         p.addArc(center: c, radius: ri, startAngle: .radians(a1 - dI), endAngle: .radians(a0 + dI), clockwise: true)
-        p.addArc(center: C0, radius: cr, startAngle: .radians(a0 + dO + .pi), endAngle: .radians(a0 + dO), clockwise: false)
+        p.addArc(center: C0, radius: cr, startAngle: .radians(a0 + dO), endAngle: .radians(a0 + dO - .pi), clockwise: true)
         p.closeSubpath()
         return p
     }
