@@ -147,7 +147,7 @@ struct PieMenuContentView: View {
                     .lineLimit(1).padding(.horizontal, 8).padding(.vertical, 4)
                     .background(Capsule().fill(lp ? AnyShapeStyle(lpColor) : AnyShapeStyle(.thinMaterial)))
                     .frame(maxWidth: radius * 1.2)
-                    .offset(x: off.x, y: off.y)
+
                     .animation(.easeOut(duration: 0.08), value: hovered)
             }
         }
