@@ -76,7 +76,6 @@ struct PieMenuContentView: View {
                 DonutShape(outerRadius: outer, innerRadius: inner)
                     .fill(lp ? AnyShapeStyle(lpColor) : settings.menuMaterial)
                     .frame(width: size, height: size)
-                    .overlay(DonutShape(outerRadius: outer, innerRadius: inner).stroke(Color.primary.opacity(0.25), lineWidth: 1.5).frame(width: size, height: size))
                     .scaleEffect(ringVis && !closing ? 1 : 0.85)
                     .opacity(ringVis && !closing ? 1 : 0)
                     .animation(lp ? nil : .spring(response: 0.2, dampingFraction: 0.75), value: ringVis)
@@ -85,7 +84,6 @@ struct PieMenuContentView: View {
                 ArcShape(radius: radius, thickness: thick, start: arcRange.lowerBound, end: arcRange.upperBound)
                     .fill(lp ? AnyShapeStyle(lpColor) : settings.menuMaterial)
                     .frame(width: size, height: size)
-                    .overlay(ArcShape(radius: radius, thickness: thick, start: arcRange.lowerBound, end: arcRange.upperBound).stroke(Color.primary.opacity(0.25), lineWidth: 1.5).frame(width: size, height: size))
                     .scaleEffect(ringVis && !closing ? 1 : 0.85)
                     .opacity(ringVis && !closing ? 1 : 0)
                     .animation(lp ? nil : .spring(response: 0.2, dampingFraction: 0.75), value: ringVis)
@@ -100,17 +98,17 @@ struct PieMenuContentView: View {
                     let cx = cos(rad) * r
                     let cy = sin(rad) * r
                     cardIcon(i, card)
-                        .frame(width: card, height: card)
-                        .offset(x: cx, y: cy)
-                        .scaleEffect(hovered == i ? settings.hoverScale : 1)
-                        .animation(.spring(response: 0.18, dampingFraction: 0.75), value: hovered)
-                        .onTapGesture { onSelect(apps[i]) }
+                        .contentShape(Circle())
                         .onHover { on in
                             hovered = on ? i : nil
                             if on, settings.haptics {
                                 NSHapticFeedbackManager.defaultPerformer.perform([.levelChange,.generic,.alignment][settings.hapticStyle], performanceTime: .now)
                             }
                         }
+                        .offset(x: cx, y: cy)
+                        .scaleEffect(hovered == i ? settings.hoverScale : 1)
+                        .animation(.spring(response: 0.18, dampingFraction: 0.75), value: hovered)
+                        .onTapGesture { onSelect(apps[i]) }
                 }
             }
 
