@@ -58,7 +58,7 @@ final class PieMenuController {
             onSelect: { [weak self] in self?.launchAndClose($0) },
             onAction: { [weak self] act in self?.runActionAndClose(act) },
             onGroup: { [weak self] group in
-                self?.openSubmenu(group: group, at: NSEvent.mouseLocation)
+                self?.openSubmenu(group: group, at: NSEvent.mouseLocation, totalMain: apps.count + actions.count + groups.count)
             }))
         host.frame = NSRect(origin: .zero, size: frame.size)
         win.contentView = host
@@ -91,7 +91,7 @@ final class PieMenuController {
         hide()
     }
 
-    private func openSubmenu(group: AppGroup, at point: NSPoint) {
+    private func openSubmenu(group: AppGroup, at point: NSPoint, totalMain: Int) {
         closeSubmenu()
         let s = AppSettings.shared
         let apps = group.paths.compactMap { path -> AppItem? in
@@ -99,12 +99,24 @@ final class PieMenuController {
             let url = URL(fileURLWithPath: path)
             return AppItem(id: url, name: url.deletingPathExtension().lastPathComponent, url: url, icon: cachedIcon(for: path))
         }
-        guard !apps.isEmpty else { return }
+        let n = max(apps.count, 1)
 
-        let r = s.radius * 1.5
-        let card = min(2 * .pi * r / CGFloat(apps.count), s.cardSize)
-        let side = r * 2 + card + 60
+        // Keep the same density (card size + gap) as the main ring
+        let mainCard = min((2 * .pi * Double(s.radius)) / Double(max(totalMain, 1)), Double(s.cardSize))
+        let gap = Double(s.cardGap)
+        let stepDeg = 360.0 / Double(max(totalMain, 1))
+        let spanDeg = max(70.0, min(360.0, Double(n) * stepDeg))
+        let spanRad = spanDeg * .pi / 180
+        let arcLen = Double(n) * (mainCard + gap)
+        let radius = CGFloat(arcLen / spanRad)
+
+        let side = radius * 2 + CGFloat(mainCard) + 60
         let frame = NSRect(x: point.x - side/2, y: point.y - side/2, width: side, height: side)
+
+        let center = NSScreen.main?.frame ?? .zero
+        let dir = atan2(point.y - center.midY, point.x - center.midX) * 180 / .pi
+        let start = dir - spanDeg / 2
+        let arcRange = start...(start + spanDeg)
 
         let win = NSWindow(contentRect: frame, styleMask: .borderless, backing: .buffered, defer: false)
         win.level = .floating; win.isOpaque = false; win.backgroundColor = .clear
@@ -115,7 +127,7 @@ final class PieMenuController {
             apps: apps, actions: [], groups: [], settings: s,
             onSelect: { [weak self] app in self?.launchAndClose(app) },
             onAction: { _ in }, onGroup: { _ in },
-            radiusOverride: r))
+            arc: arcRange, radiusOverride: radius))
         host.frame = NSRect(origin: .zero, size: frame.size)
         win.contentView = host
         self.submenuWindow = win

@@ -173,66 +173,6 @@ struct SettingsView: View {
                     }
                 }
                 
-                // Groups
-                if settings.showActions {
-                    section("Groups", "folder.fill") {
-                        if settings.pinnedGroups.isEmpty {
-                            Text("No groups. Drop a folder below to create one, then add your own apps.").font(.system(size: 10)).foregroundColor(.secondary).fixedSize(horizontal: false, vertical: true)
-                        }
-                        ForEach(Array(settings.pinnedGroups.enumerated()), id: \.element.id) { idx, group in
-                            DisclosureGroup {
-                                VStack(spacing: 4) {
-                                    ForEach(group.paths.indices, id: \.self) { i in
-                                        let path = group.paths[i]
-                                        HStack(spacing: 6) {
-                                            Image(nsImage: iconFor(path)).resizable().frame(width: 18, height: 18)
-                                            Text(URL(fileURLWithPath: path).deletingPathExtension().lastPathComponent).font(.system(size: 10)).lineLimit(1)
-                                            Spacer()
-                                            Button { settings.pinnedGroups[idx].paths.remove(at: i) } label: {
-                                                Image(systemName: "xmark.circle.fill").font(.system(size: 10)).foregroundColor(.secondary.opacity(0.5))
-                                            }.buttonStyle(.plain)
-                                        }
-                                    }
-                                    Button { pickApp(into: idx) } label: {
-                                        Label("Add app", systemImage: "plus.circle.fill").font(.system(size: 10)).foregroundColor(.accentColor)
-                                    }.buttonStyle(.plain).frame(maxWidth: .infinity, alignment: .leading)
-                                }.padding(.vertical, 4)
-                            } label: {
-                                HStack(spacing: 6) {
-                                    Image(systemName: "folder.fill").font(.system(size: 11)).foregroundColor(.orange)
-                                    Text(group.name).font(.system(size: 11, weight: .medium)).lineLimit(1)
-                                    Spacer()
-                                    Button { settings.pinnedGroups.remove(at: idx) } label: {
-                                        Image(systemName: "xmark.circle.fill").font(.system(size: 10)).foregroundColor(.secondary.opacity(0.5))
-                                    }.buttonStyle(.plain)
-                                }
-                            }
-                        }
-                        // Drop zone for folders -> new group
-                        RoundedRectangle(cornerRadius: 8)
-                            .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [5, 3]))
-                            .foregroundColor(.secondary.opacity(0.3))
-                            .frame(height: 56)
-                            .frame(maxWidth: .infinity)
-                            .overlay(Text("Drop a folder here to create a group").font(.system(size: 10)).foregroundColor(.secondary))
-                            .onDrop(of: [.fileURL], isTargeted: nil) { providers in
-                                for p in providers {
-                                    p.loadItem(forTypeIdentifier: "public.file-url", options: nil) { item, _ in
-                                        guard let data = item as? Data, let url = URL(dataRepresentation: data, relativeTo: nil) else { return }
-                                        DispatchQueue.main.async {
-                                            var isDir: ObjCBool = false
-                                            if FileManager.default.fileExists(atPath: url.path, isDirectory: &isDir), isDir.boolValue {
-                                                let apps = (try? FileManager.default.contentsOfDirectory(atPath: url.path))?
-                                                    .filter { $0.hasSuffix(".app") }.map { url.appendingPathComponent($0).path } ?? []
-                                                settings.pinnedGroups.append(AppGroup(name: url.lastPathComponent, paths: apps))
-                                            }
-                                        }
-                                    }
-                                }; return true
-                            }
-                    }
-                }
-                
                 // Reset
                 Button { withAnimation { settings.resetToDefaults() } } label: {
                     Label("Reset All", systemImage: "arrow.counterclockwise")
@@ -275,6 +215,66 @@ struct SettingsView: View {
                 }.menuStyle(.borderlessButton).frame(width: 30)
             }.padding(.horizontal, 16).padding(.top, 12).padding(.bottom, 6)
             Divider().padding(.horizontal, 12)
+
+            // Groups
+            if settings.showActions {
+                section("Groups", "folder.fill") {
+                    if settings.pinnedGroups.isEmpty {
+                        Text("No groups. Drop a folder below to create one, then add your own apps.").font(.system(size: 10)).foregroundColor(.secondary).fixedSize(horizontal: false, vertical: true)
+                    }
+                    ForEach(Array(settings.pinnedGroups.enumerated()), id: \.element.id) { idx, group in
+                        DisclosureGroup {
+                            VStack(spacing: 4) {
+                                ForEach(group.paths.indices, id: \.self) { i in
+                                    let path = group.paths[i]
+                                    HStack(spacing: 6) {
+                                        Image(nsImage: iconFor(path)).resizable().frame(width: 18, height: 18)
+                                        Text(URL(fileURLWithPath: path).deletingPathExtension().lastPathComponent).font(.system(size: 10)).lineLimit(1)
+                                        Spacer()
+                                        Button { settings.pinnedGroups[idx].paths.remove(at: i) } label: {
+                                            Image(systemName: "xmark.circle.fill").font(.system(size: 10)).foregroundColor(.secondary.opacity(0.5))
+                                        }.buttonStyle(.plain)
+                                    }
+                                }
+                                Button { pickApp(into: idx) } label: {
+                                    Label("Add app", systemImage: "plus.circle.fill").font(.system(size: 10)).foregroundColor(.accentColor)
+                                }.buttonStyle(.plain).frame(maxWidth: .infinity, alignment: .leading)
+                            }.padding(.vertical, 4)
+                        } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: "folder.fill").font(.system(size: 11)).foregroundColor(.orange)
+                                Text(group.name).font(.system(size: 11, weight: .medium)).lineLimit(1)
+                                Spacer()
+                                Button { settings.pinnedGroups.remove(at: idx) } label: {
+                                    Image(systemName: "xmark.circle.fill").font(.system(size: 10)).foregroundColor(.secondary.opacity(0.5))
+                                }.buttonStyle(.plain)
+                            }
+                        }
+                    }
+                    // Drop zone for folders -> new group
+                    RoundedRectangle(cornerRadius: 8)
+                        .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [5, 3]))
+                        .foregroundColor(.secondary.opacity(0.3))
+                        .frame(height: 56)
+                        .frame(maxWidth: .infinity)
+                        .overlay(Text("Drop a folder here to create a group").font(.system(size: 10)).foregroundColor(.secondary))
+                        .onDrop(of: [.fileURL], isTargeted: nil) { providers in
+                            for p in providers {
+                                p.loadItem(forTypeIdentifier: "public.file-url", options: nil) { item, _ in
+                                    guard let data = item as? Data, let url = URL(dataRepresentation: data, relativeTo: nil) else { return }
+                                    DispatchQueue.main.async {
+                                        var isDir: ObjCBool = false
+                                        if FileManager.default.fileExists(atPath: url.path, isDirectory: &isDir), isDir.boolValue {
+                                            let apps = (try? FileManager.default.contentsOfDirectory(atPath: url.path))?
+                                                .filter { $0.hasSuffix(".app") }.map { url.appendingPathComponent($0).path } ?? []
+                                            settings.pinnedGroups.append(AppGroup(name: url.lastPathComponent, paths: apps))
+                                        }
+                                    }
+                                }
+                            }; return true
+                        }
+                }
+            }
             List {
                 ForEach(Array(settings.pinnedAppPaths.enumerated()), id: \.element) { i, path in
                     HStack(spacing: 8) {

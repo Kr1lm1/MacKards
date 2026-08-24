@@ -83,6 +83,10 @@ struct PieMenuContentView: View {
             
             ForEach(0..<total, id: \.self) { i in pieCard(i, card: card, ring: ring) }
             
+            if total == 0 {
+                Text("No apps in group").font(.system(size: 12)).foregroundStyle(.secondary)
+            }
+            
             if settings.showLabels, let h = hovered {
                 let label = h < apps.count ? apps[h].name
                     : h < apps.count + actions.count ? actions[h - apps.count].name
@@ -166,7 +170,7 @@ struct PieMenuContentView: View {
             }
         } else {
             let s = size * scale * 0.65
-            Image(systemName: "folder.fill").font(.system(size: s, weight: .medium))
+            Image(systemName: "square.grid.2x2.fill").font(.system(size: s, weight: .medium))
                 .foregroundStyle(.primary).frame(width: s*1.2, height: s*1.2)
         }
     }
