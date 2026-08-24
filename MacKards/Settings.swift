@@ -35,6 +35,7 @@ final class AppSettings: ObservableObject {
     @Published var enabledActions: [String] { didSet { d.set(enabledActions, forKey: "ea"); notify() } }
     @Published var pinnedAppPaths: [String] { didSet { d.set(pinnedAppPaths, forKey: "pa"); notify() } }
     @Published var pinnedFolderPaths: [String] { didSet { d.set(pinnedFolderPaths, forKey: "pf"); notify() } }
+    @Published var pinnedGroups: [AppGroup] { didSet { d.set(try? JSONEncoder().encode(pinnedGroups), forKey: "pg"); notify() } }
     @Published var blurLevel: Int { didSet { d.set(blurLevel, forKey: "bl") } } // 0=ultraThin 1=thin 2=regular 3=thick
     
     private func notify() { NotificationCenter.default.post(name: .settingsChanged, object: nil) }
@@ -64,6 +65,7 @@ final class AppSettings: ObservableObject {
         enabledActions = d.stringArray(forKey: "ea") ?? ["downloads","documents","desktop","trash"]
         pinnedAppPaths = d.stringArray(forKey: "pa") ?? Self.defaultApps()
         pinnedFolderPaths = d.stringArray(forKey: "pf") ?? []
+        pinnedGroups = (d.data(forKey: "pg")).flatMap { try? JSONDecoder().decode([AppGroup].self, from: $0) } ?? []
         blurLevel = d.object(forKey: "bl") == nil ? 0 : d.integer(forKey: "bl")
     }
     
@@ -72,6 +74,7 @@ final class AppSettings: ObservableObject {
         enabledActions=["downloads","documents","desktop","trash"]
         pinnedAppPaths=Self.defaultApps()
         pinnedFolderPaths=[]
+        pinnedGroups=[]
         blurLevel=0
     }
     
@@ -108,4 +111,16 @@ final class AppSettings: ObservableObject {
 extension Notification.Name {
     static let settingsChanged = Notification.Name("sc")
     static let openSettings = Notification.Name("os")
+}
+
+struct AppGroup: Codable, Identifiable, Hashable {
+    var id: UUID
+    var name: String
+    var paths: [String]
+
+    init(id: UUID = UUID(), name: String, paths: [String]) {
+        self.id = id
+        self.name = name
+        self.paths = paths
+    }
 }

@@ -6,9 +6,13 @@ private let lpColor = Color(nsColor: .controlBackgroundColor)
 struct PieMenuContentView: View {
     let apps: [AppItem]
     let actions: [QuickAction]
+    let groups: [AppGroup]
     let settings: AppSettings
     let onSelect: (AppItem) -> Void
     let onAction: (QuickAction) -> Void
+    let onGroup: (AppGroup) -> Void
+    var arc: ClosedRange<Double>? = nil
+    var radiusOverride: CGFloat? = nil
     
     @State private var shown = 0
     @State private var hovered: Int? = nil
@@ -17,7 +21,8 @@ struct PieMenuContentView: View {
     @State private var menuOpacity: Double = 0
     @ObservedObject private var state = PieMenuState.shared
     
-    private var total: Int { apps.count + actions.count }
+    private var total: Int { apps.count + actions.count + groups.count }
+    private var radius: CGFloat { radiusOverride ?? settings.radius }
     
     var body: some View {
         pieBody
@@ -56,16 +61,16 @@ struct PieMenuContentView: View {
     
     private var pieBody: some View {
         let n = CGFloat(total), lp = settings.lowPower
-        let circ = 2 * .pi * settings.radius
+        let circ = 2 * .pi * radius
         let card = min((circ - settings.cardGap * n) / n, settings.cardSize)
-        let size = settings.radius * 2 + card + 60
-        let ring = settings.menuStyle == 1
+        let size = radius * 2 + card + 60
+        let ring = settings.menuStyle == 1 && arc == nil
         let thick = settings.ringThickness
         let closing = state.isClosing
         
         return ZStack {
             if ring {
-                let outer = settings.radius + thick/2, inner = max(settings.radius - thick/2, 10)
+                let outer = radius + thick/2, inner = max(radius - thick/2, 10)
                 DonutShape(outerRadius: outer, innerRadius: inner)
                     .fill(lp ? AnyShapeStyle(lpColor) : settings.menuMaterial)
                     .frame(width: size, height: size)
@@ -79,11 +84,14 @@ struct PieMenuContentView: View {
             ForEach(0..<total, id: \.self) { i in pieCard(i, card: card, ring: ring) }
             
             if settings.showLabels, let h = hovered {
-                Text(h < apps.count ? apps[h].name : actions[h-apps.count].name)
+                let label = h < apps.count ? apps[h].name
+                    : h < apps.count + actions.count ? actions[h - apps.count].name
+                    : groups[h - apps.count - actions.count].name
+                Text(label)
                     .font(.system(size: 13, weight: .medium)).foregroundStyle(.primary)
                     .lineLimit(1).padding(.horizontal, 8).padding(.vertical, 4)
                     .background(Capsule().fill(lp ? AnyShapeStyle(lpColor) : AnyShapeStyle(.thinMaterial)))
-                    .frame(maxWidth: settings.radius * 1.2)
+                    .frame(maxWidth: radius * 1.2)
                     .animation(.easeOut(duration: 0.08), value: hovered)
             }
         }
@@ -93,14 +101,16 @@ struct PieMenuContentView: View {
     }
     
     private func pieCard(_ i: Int, card: CGFloat, ring: Bool) -> some View {
-        let slice = 360.0 / Double(total)
-        let ang = slice * Double(i) - 90, rad = ang * .pi / 180
+        let span = arc.map { $0.upperBound - $0.lowerBound } ?? 360.0
+        let start = arc?.lowerBound ?? -90.0
+        let slice = span / Double(total)
+        let ang = start + slice * Double(i) + slice / 2, rad = ang * .pi / 180
         let lp = settings.lowPower
         let isH = hovered == i, vis = i < shown && !state.isClosing
-        let r = settings.radius + (isH && !lp ? 6.0 : 0)
+        let r = radius + (isH && !lp ? 6.0 : 0)
         let x = cos(rad) * r, y = sin(rad) * r
-        let pr = (slice * Double(max(i-1,0)) - 90) * .pi / 180
-        let px = cos(pr) * settings.radius, py = sin(pr) * settings.radius
+        let pr = (start + slice * Double(max(i-1,0)) + slice / 2) * .pi / 180
+        let px = cos(pr) * radius, py = sin(pr) * radius
         let shape = PieSliceShape(narrowFactor: 0.55, rotation: ang + 90)
         
         return ZStack {
@@ -112,21 +122,26 @@ struct PieMenuContentView: View {
         }
         .frame(width: card, height: card)
         .contentShape(ring ? AnyShape(Circle()) : AnyShape(shape))
-        .onTapGesture { i < apps.count ? onSelect(apps[i]) : onAction(actions[i-apps.count]) }
+        .onTapGesture {
+            if i < apps.count { onSelect(apps[i]) }
+            else if i < apps.count + actions.count { onAction(actions[i - apps.count]) }
+            else { onGroup(groups[i - apps.count - actions.count]) }
+        }
         .onHover { on in
             let prev = hovered; hovered = on ? i : nil
             let st = PieMenuState.shared
             if on {
                 if i < apps.count { st.hoveredApp = apps[i]; st.hoveredAction = nil }
-                else { st.hoveredApp = nil; st.hoveredAction = actions[i-apps.count] }
+                else if i < apps.count + actions.count { st.hoveredApp = nil; st.hoveredAction = actions[i - apps.count] }
+                else { st.hoveredApp = nil; st.hoveredAction = nil }
                 if prev != i && settings.haptics {
                     NSHapticFeedbackManager.defaultPerformer.perform([.levelChange,.generic,.alignment][settings.hapticStyle], performanceTime: .now)
                 }
             } else { st.hoveredApp = nil; st.hoveredAction = nil }
         }
         .onDrop(of: [.fileURL], isTargeted: nil) { p in
-            guard i >= apps.count else { return false }
-            let act = actions[i-apps.count]; guard act.targetURL != nil else { return false }
+            guard i >= apps.count, i < apps.count + actions.count else { return false }
+            let act = actions[i - apps.count]; guard act.targetURL != nil else { return false }
             act.handleDrop(providers: p); return true
         }
         .scaleEffect(vis ? (isH && !lp ? settings.hoverScale : 1) : (lp ? 1 : 0.01))
@@ -140,7 +155,7 @@ struct PieMenuContentView: View {
         let scale = settings.iconScale
         if i < apps.count {
             Image(nsImage: apps[i].icon).resizable().aspectRatio(contentMode: .fit).frame(width: size*scale, height: size*scale)
-        } else {
+        } else if i < apps.count + actions.count {
             let act = actions[i-apps.count]
             if let img = act.folderImage {
                 Image(nsImage: img).resizable().aspectRatio(contentMode: .fit).frame(width: size*scale, height: size*scale)
@@ -149,6 +164,10 @@ struct PieMenuContentView: View {
                 Image(systemName: act.icon).font(.system(size: s, weight: .medium))
                     .foregroundStyle(.primary).frame(width: s*1.2, height: s*1.2)
             }
+        } else {
+            let s = size * scale * 0.65
+            Image(systemName: "folder.fill").font(.system(size: s, weight: .medium))
+                .foregroundStyle(.primary).frame(width: s*1.2, height: s*1.2)
         }
     }
 }
