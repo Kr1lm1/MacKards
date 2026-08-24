@@ -68,9 +68,8 @@ struct PieMenuContentView: View {
         let size = radius * 2 + card + 60
         let ring = settings.menuStyle == 1 && arc == nil
         let thick = settings.ringThickness
-        let arcThick = thick * 0.65
         let closing = state.isClosing
-        let outline = Color.primary.opacity(0.25)
+        let outline = Color.primary.opacity(0.125)
 
         return ZStack {
             if ring {
@@ -84,13 +83,12 @@ struct PieMenuContentView: View {
                     .animation(lp ? nil : .spring(response: 0.2, dampingFraction: 0.75), value: ringVis)
                     .animation(lp ? nil : .easeIn(duration: 0.1), value: closing)
             } else if let arcRange = arc {
-                let at = arcThick
                 ZStack {
-                    ArcShape(radius: radius, thickness: at, start: arcRange.lowerBound, end: arcRange.upperBound)
-                        .stroke(outline, lineWidth: at + 3)
+                    ArcShape(radius: radius, thickness: thick, start: arcRange.lowerBound, end: arcRange.upperBound)
+                        .stroke(outline, lineWidth: thick + 3)
                         .frame(width: size, height: size)
-                    ArcShape(radius: radius, thickness: at, start: arcRange.lowerBound, end: arcRange.upperBound)
-                        .stroke(lp ? AnyShapeStyle(lpColor) : AnyShapeStyle(settings.menuMaterial), lineWidth: at)
+                    ArcShape(radius: radius, thickness: thick, start: arcRange.lowerBound, end: arcRange.upperBound)
+                        .stroke(lp ? AnyShapeStyle(lpColor) : AnyShapeStyle(settings.menuMaterial), lineWidth: thick)
                         .frame(width: size, height: size)
                 }
                 .scaleEffect(ringVis && !closing ? 1 : 0.85)
@@ -109,7 +107,7 @@ struct PieMenuContentView: View {
                     let cx = cos(rad) * rr
                     let cy = sin(rad) * rr
                     cardIcon(i, card)
-                        .frame(width: arcThick, height: arcThick)
+                        .frame(width: thick, height: thick)
                         .contentShape(Circle())
                         .onHover { on in
                             hovered = on ? i : nil
@@ -266,8 +264,27 @@ struct ArcShape: Shape {
     let radius: CGFloat, thickness: CGFloat, start: Double, end: Double
     func path(in rect: CGRect) -> Path {
         let c = CGPoint(x: rect.midX, y: rect.midY)
+        let ro = radius + thickness/2
+        let ri = max(radius - thickness/2, 1)
+        let cr = min(thickness * 0.3, thickness/2 - 0.5)
+        let a0 = start * .pi / 180
+        let a1 = end * .pi / 180
+        let dO = cr / ro
+        let dI = cr / ri
+        let C1 = CGPoint(x: c.x + (ro - cr) * cos(a1 - dO), y: c.y + (ro - cr) * sin(a1 - dO))
+        let Q1 = CGPoint(x: c.x + (ro - 2*cr) * cos(a1 - dO), y: c.y + (ro - 2*cr) * sin(a1 - dO))
+        let P1i = CGPoint(x: c.x + ri * cos(a1 - dI), y: c.y + ri * sin(a1 - dI))
+        let C0 = CGPoint(x: c.x + (ro - cr) * cos(a0 + dO), y: c.y + (ro - cr) * sin(a0 + dO))
+        let Q0 = CGPoint(x: c.x + (ro - 2*cr) * cos(a0 + dO), y: c.y + (ro - 2*cr) * sin(a0 + dO))
+        let P0i = CGPoint(x: c.x + ri * cos(a0 + dI), y: c.y + ri * sin(a0 + dI))
         var p = Path()
-        p.addArc(center: c, radius: radius, startAngle: .radians(start * .pi / 180), endAngle: .radians(end * .pi / 180), clockwise: false)
+        p.addArc(center: c, radius: ro, startAngle: .radians(a0 + dO), endAngle: .radians(a1 - dO), clockwise: false)
+        p.addArc(center: C1, radius: cr, startAngle: .radians(a1 - dO), endAngle: .radians(a1 - dO + .pi), clockwise: false)
+        p.addLine(to: P1i)
+        p.addArc(center: c, radius: ri, startAngle: .radians(a1 - dI), endAngle: .radians(a0 + dI), clockwise: true)
+        p.addLine(to: Q0)
+        p.addArc(center: C0, radius: cr, startAngle: .radians(a0 + dO + .pi), endAngle: .radians(a0 + dO), clockwise: false)
+        p.closeSubpath()
         return p
     }
 }
