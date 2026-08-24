@@ -15,7 +15,11 @@ final class PieMenuController {
     private var menuCenter: NSPoint = .zero
     private var submenuMonitor: Any?
     private var submenuIconRects: [CGRect] = []
+    private var submenuGroupIndex: Int?
     private var apps: [AppItem] = []
+    private var mainApps: [AppItem] = []
+    private var mainActions: [QuickAction] = []
+    private var mainGroups: [AppGroup] = []
     private var cacheTime: Date = .distantPast
     private let iconCache = NSCache<NSString, NSImage>()
 
@@ -43,6 +47,9 @@ final class PieMenuController {
             })
         }
         let groups = s.pinnedGroups
+        self.mainApps = apps
+        self.mainActions = actions
+        self.mainGroups = groups
 
         let n = CGFloat(apps.count + actions.count + groups.count)
         guard n > 0 else { visible = false; return }
@@ -62,7 +69,9 @@ final class PieMenuController {
             onSelect: { [weak self] in self?.launchAndClose($0) },
             onAction: { [weak self] act in self?.runActionAndClose(act) },
             onGroup: { [weak self] group in
-                self?.openSubmenu(group: group, at: NSEvent.mouseLocation, totalMain: apps.count + actions.count + groups.count)
+                guard let self else { return }
+                let idx = self.mainGroups.firstIndex(where: { $0.id == group.id }) ?? 0
+                self.openSubmenu(group: group, at: NSEvent.mouseLocation, totalMain: self.mainApps.count + self.mainActions.count + self.mainGroups.count, groupIndex: idx)
             }))
         host.frame = NSRect(origin: .zero, size: frame.size)
         win.contentView = host
@@ -95,8 +104,10 @@ final class PieMenuController {
         hide()
     }
 
-    private func openSubmenu(group: AppGroup, at point: NSPoint, totalMain: Int) {
+    private func openSubmenu(group: AppGroup, at point: NSPoint, totalMain: Int, groupIndex: Int) {
+        if submenuWindow != nil, submenuGroupIndex == groupIndex { closeSubmenu(); return }
         closeSubmenu()
+        submenuGroupIndex = groupIndex
         let s = AppSettings.shared
         let apps = group.paths.compactMap { path -> AppItem? in
             guard FileManager.default.fileExists(atPath: path) else { return nil }
@@ -153,8 +164,24 @@ final class PieMenuController {
         submenuMonitor = NSEvent.addLocalMonitorForEvents(matching: .leftMouseDown) { [weak self] e in
             guard let self else { return e }
             let pt = NSEvent.mouseLocation
-            let onIcon = self.submenuIconRects.contains { $0.contains(pt) }
-            if !onIcon { self.closeSubmenu() }
+            if self.submenuIconRects.contains(where: { $0.contains(pt) }) { return e }
+            let totalMain = self.mainApps.count + self.mainActions.count + self.mainGroups.count
+            for j in 0..<self.mainGroups.count {
+                let i = self.mainApps.count + self.mainActions.count + j
+                let step = 360.0 / Double(max(totalMain, 1))
+                let startA = -90.0 - step * Double(max(totalMain, 1) - 1) / 2
+                let ang = (startA + step * Double(i)) * .pi / 180
+                let cardMain = min((2 * CGFloat.pi * s.radius) / CGFloat(max(totalMain, 1)), CGFloat(s.cardSize))
+                let px = self.menuCenter.x + CGFloat(cos(ang)) * s.radius
+                let py = self.menuCenter.y + CGFloat(sin(ang)) * s.radius
+                let r = CGRect(x: px - cardMain/2, y: py - cardMain/2, width: cardMain, height: cardMain)
+                if r.contains(pt) {
+                    if j == self.submenuGroupIndex { self.closeSubmenu() }
+                    else { self.openSubmenu(group: self.mainGroups[j], at: pt, totalMain: totalMain, groupIndex: j) }
+                    return e
+                }
+            }
+            self.closeSubmenu()
             return e
         }
     }
@@ -162,6 +189,7 @@ final class PieMenuController {
     private func closeSubmenu() {
         if let m = submenuMonitor { NSEvent.removeMonitor(m); submenuMonitor = nil }
         submenuIconRects = []
+        submenuGroupIndex = nil
         guard let win = submenuWindow else { return }
         submenuWindow = nil
         win.orderOut(nil)
