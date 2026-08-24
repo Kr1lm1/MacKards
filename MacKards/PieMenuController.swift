@@ -12,6 +12,7 @@ final class PieMenuController {
     private var window: NSWindow?
     private var submenuWindow: NSWindow?
     private var visible = false
+    private var menuCenter: NSPoint = .zero
     private var apps: [AppItem] = []
     private var cacheTime: Date = .distantPast
     private let iconCache = NSCache<NSString, NSImage>()
@@ -30,6 +31,7 @@ final class PieMenuController {
 
         let s = AppSettings.shared
         let mouse = NSEvent.mouseLocation
+        menuCenter = mouse
         let apps = loadApps()
         var actions = s.showActions ? QuickAction.allActions.filter { s.enabledActions.contains($0.id) } : []
         for path in s.pinnedFolderPaths {
@@ -111,10 +113,9 @@ final class PieMenuController {
         let radius = CGFloat(arcLen / spanRad)
 
         let side = radius * 2 + CGFloat(mainCard) + 60
-        let frame = NSRect(x: point.x - side/2, y: point.y - side/2, width: side, height: side)
+        let frame = NSRect(x: menuCenter.x - side/2, y: menuCenter.y - side/2, width: side, height: side)
 
-        let center = NSScreen.main?.frame ?? .zero
-        let dir = atan2(center.midY - point.y, point.x - center.midX) * 180 / .pi
+        let dir = atan2(menuCenter.y - point.y, point.x - menuCenter.x) * 180 / .pi
         let start = dir - spanDeg / 2
         let arcRange = start...(start + spanDeg)
 

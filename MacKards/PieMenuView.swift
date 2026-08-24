@@ -61,7 +61,8 @@ struct PieMenuContentView: View {
     
     private var pieBody: some View {
         let n = CGFloat(max(total, 1)), lp = settings.lowPower
-        let circ = 2 * .pi * radius
+        let baseR = settings.radius
+        let circ = 2 * .pi * baseR
         let card = min((circ - settings.cardGap * n) / n, settings.cardSize)
         let size = radius * 2 + card + 60
         let ring = settings.menuStyle == 1 && arc == nil
@@ -80,11 +81,9 @@ struct PieMenuContentView: View {
                     .animation(lp ? nil : .spring(response: 0.2, dampingFraction: 0.75), value: ringVis)
                     .animation(lp ? nil : .easeIn(duration: 0.1), value: closing)
             } else if let arcRange = arc {
-                let outer = radius + thick/2, inner = max(radius - thick/2, 10)
-                ArcShape(innerRadius: inner, outerRadius: outer, start: arcRange.lowerBound, end: arcRange.upperBound)
-                    .fill(lp ? AnyShapeStyle(lpColor) : settings.menuMaterial)
+                ArcShape(thickness: thick, start: arcRange.lowerBound, end: arcRange.upperBound)
+                    .stroke(lp ? AnyShapeStyle(lpColor) : settings.menuMaterial, style: StrokeStyle(lineWidth: thick, lineCap: .round))
                     .frame(width: size, height: size)
-                    .overlay(ArcShape(innerRadius: inner, outerRadius: outer, start: arcRange.lowerBound, end: arcRange.upperBound).stroke(Color.primary.opacity(0.1), lineWidth: 0.5).frame(width: size, height: size))
                     .scaleEffect(ringVis && !closing ? 1 : 0.85)
                     .opacity(ringVis && !closing ? 1 : 0)
                     .animation(lp ? nil : .spring(response: 0.2, dampingFraction: 0.75), value: ringVis)
@@ -226,13 +225,12 @@ struct DonutShape: Shape {
 }
 
 struct ArcShape: Shape {
-    let innerRadius: CGFloat, outerRadius: CGFloat, start: Double, end: Double
+    let thickness: CGFloat, start: Double, end: Double
     func path(in rect: CGRect) -> Path {
         let c=CGPoint(x:rect.midX,y:rect.midY)
+        let r = min(rect.width, rect.height)/2 - thickness/2
         var p=Path()
-        p.addArc(center:c,radius:outerRadius,startAngle:.degrees(start),endAngle:.degrees(end),clockwise:false)
-        p.addArc(center:c,radius:innerRadius,startAngle:.degrees(end),endAngle:.degrees(start),clockwise:true)
-        p.closeSubpath()
+        p.addArc(center:c,radius:r,startAngle:.degrees(start),endAngle:.degrees(end),clockwise:false)
         return p
     }
 }
