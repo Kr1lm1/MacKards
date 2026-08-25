@@ -116,12 +116,12 @@ final class PieMenuController {
         let n = max(apps.count, 1)
 
         let mainCard = min((2 * .pi * Double(s.radius)) / Double(max(totalMain, 1)), Double(s.cardSize))
-        let gapSub = 8.0
+        let gapSub = 4.0
         let minRadius = s.radius + s.ringThickness + 8
         let gapAng = gapSub / Double(minRadius) * 180 / .pi
         let iconAng = mainCard / Double(minRadius) * 180 / .pi
-        let iconSpanDeg = max(30.0, min(200.0, Double(n + 1) * gapAng + Double(n) * iconAng + 30.0))
-        let bgSpanDeg = min(260.0, iconSpanDeg + 40.0)
+        let iconSpanDeg = max(30.0, min(200.0, Double(n + 1) * gapAng + Double(n) * iconAng + 20.0))
+        let bgSpanDeg = min(240.0, iconSpanDeg + 20.0)
         let arcLenAvailable = 2 * .pi * Double(minRadius) * (iconSpanDeg / 360.0)
         let cardSub = max(24.0, min(mainCard, (arcLenAvailable - Double(n + 1) * gapSub) / Double(n)))
         let radius = minRadius
@@ -133,7 +133,7 @@ final class PieMenuController {
         let dir = -90.0 + stepDeg * Double(mainApps.count + mainActions.count + groupIndex) + stepDeg / 2
         let iconStart = dir - iconSpanDeg / 2
         let iconArc = iconStart...(iconStart + iconSpanDeg)
-        let bgStart = iconStart - 20.0
+        let bgStart = iconStart - 35.0
         let bgArc = bgStart...(bgStart + bgSpanDeg)
 
         let win = NSWindow(contentRect: frame, styleMask: .borderless, backing: .buffered, defer: false)
