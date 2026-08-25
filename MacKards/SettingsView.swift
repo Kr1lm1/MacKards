@@ -287,42 +287,12 @@ struct SettingsView: View {
                     Text("Groups").font(.system(size: 13, weight: .semibold))
                 }
             }
-
-            // Drop zone for apps
-            Section {
-                RoundedRectangle(cornerRadius: 8)
-                    .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [5, 3]))
-                    .foregroundColor(.secondary.opacity(0.3))
-                    .frame(height: 80)
-                    .frame(maxWidth: .infinity)
-                    .overlay(
-                        VStack(spacing: 4) {
-                            Image(systemName: "plus.app").font(.system(size: 16)).foregroundColor(.secondary.opacity(0.5))
-                            Text("Drop .app here").font(.system(size: 11)).foregroundColor(.secondary)
-                        }
-                    )
-                    .onDrop(of: [.fileURL], isTargeted: nil) { providers in
-                        for p in providers {
-                            p.loadItem(forTypeIdentifier: "public.file-url", options: nil) { item, _ in
-                                guard let data = item as? Data,
-                                      let url = URL(dataRepresentation: data, relativeTo: nil) else { return }
-                                DispatchQueue.main.async {
-                                    if url.pathExtension == "app" {
-                                        if !settings.pinnedAppPaths.contains(url.path) {
-                                            settings.pinnedAppPaths.append(url.path)
-                                        }
-                                    }
-                                }
-                            }
-                        }; return true
-                    }
-            } header: {
-                Text("Drop apps").font(.system(size: 13, weight: .semibold))
-            }
         }
         .listStyle(.plain)
         .environment(\.defaultMinListRowHeight, 30)
         .padding(.horizontal, 2)
+        .animation(.easeInOut(duration: 0.2), value: settings.pinnedAppPaths.count)
+        .animation(.easeInOut(duration: 0.2), value: settings.pinnedGroups.count)
     }
     
     // MARK: - About
