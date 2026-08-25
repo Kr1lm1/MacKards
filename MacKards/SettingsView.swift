@@ -6,6 +6,7 @@ struct SettingsView: View {
     @ObservedObject var settings = AppSettings.shared
     @State private var apps: [AppItem] = []
     @State private var tab = 0
+    @State private var appeared = false
     @State private var iconCache: [String: NSImage] = [:]
     
     private func iconFor(_ path: String) -> NSImage {
@@ -38,6 +39,11 @@ struct SettingsView: View {
             .transition(.move(edge: .trailing).combined(with: .opacity))
             .animation(.easeInOut(duration: 0.22), value: tab)
         }
+        .opacity(appeared ? 1 : 0)
+        .offset(x: appeared ? 0 : 24)
+        .animation(.easeOut(duration: 0.28), value: appeared)
+        .onAppear { appeared = true }
+    }
         .frame(width: 520, height: 560)
         .onAppear { AppFinder.shared.getApps { apps = $0 } }
     }
