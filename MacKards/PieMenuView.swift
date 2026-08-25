@@ -196,7 +196,7 @@ struct PieMenuContentView: View {
                 if i < apps.count { st.hoveredApp = apps[i]; st.hoveredAction = nil; if arc == nil { onCloseSubmenu() } }
                 else if i < apps.count + actions.count {
                     let act = actions[i - apps.count]
-                    if let url = act.targetURL, url.hasDirectoryPath, FileManager.default.fileExists(atPath: url.path) {
+                    if settings.showSubmenu, let url = act.targetURL, url.hasDirectoryPath, FileManager.default.fileExists(atPath: url.path) {
                         st.hoveredApp = nil; st.hoveredAction = nil
                         if arc == nil { onFolder(act) }
                     } else {
@@ -206,7 +206,7 @@ struct PieMenuContentView: View {
                 }
                 else {
                     st.hoveredApp = nil; st.hoveredAction = nil
-                    if arc == nil {
+                    if settings.showSubmenu, arc == nil {
                         let g = i - apps.count - actions.count
                         if g < groups.count { onGroup(groups[g]) }
                     }

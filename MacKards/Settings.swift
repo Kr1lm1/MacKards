@@ -17,6 +17,7 @@ final class AppSettings: ObservableObject {
     @Published var ringThickness: CGFloat { didSet { d.set(Double(ringThickness), forKey: "rt") } }
     @Published var showLabels: Bool { didSet { d.set(showLabels, forKey: "sl") } }
     @Published var showActions: Bool { didSet { d.set(showActions, forKey: "sa") } }
+    @Published var showSubmenu: Bool { didSet { d.set(showSubmenu, forKey: "ss") } }
     @Published var haptics: Bool { didSet { d.set(haptics, forKey: "hp") } }
     @Published var hapticStyle: Int { didSet { d.set(hapticStyle, forKey: "hps") } } // 0=light 1=medium 2=strong
     @Published var lowPower: Bool { didSet { d.set(lowPower, forKey: "lp") } }
@@ -51,6 +52,7 @@ final class AppSettings: ObservableObject {
         let rt = d.double(forKey: "rt"); ringThickness = rt > 0 ? rt : 64
         showLabels = d.object(forKey: "sl") == nil ? true : d.bool(forKey: "sl")
         showActions = d.object(forKey: "sa") == nil ? true : d.bool(forKey: "sa")
+        showSubmenu = d.object(forKey: "ss") == nil ? true : d.bool(forKey: "ss")
         haptics = d.object(forKey: "hp") == nil ? true : d.bool(forKey: "hp")
         hapticStyle = min(max(d.object(forKey: "hps") == nil ? 1 : d.integer(forKey: "hps"), 0), 2)
         lowPower = d.bool(forKey: "lp")
@@ -70,7 +72,7 @@ final class AppSettings: ObservableObject {
     }
     
     func resetToDefaults() {
-        radius=90;cardSize=72;hoverScale=1.2;iconScale=0.7;animSpeed=2.0;menuStyle=1;cardGap=0;ringThickness=64;showLabels=true;showActions=true;haptics=true;hapticStyle=1;lowPower=false;openAnim=0;launchAtLogin=false;hotkeyMod1=0;hotkeyMod2=2
+        radius=90;cardSize=72;hoverScale=1.2;iconScale=0.7;animSpeed=2.0;menuStyle=1;cardGap=0;ringThickness=64;showLabels=true;showActions=true;showSubmenu=true;haptics=true;hapticStyle=1;lowPower=false;openAnim=0;launchAtLogin=false;hotkeyMod1=0;hotkeyMod2=2
         enabledActions=["downloads","documents","desktop","trash"]
         pinnedAppPaths=Self.defaultApps()
         pinnedFolderPaths=[]

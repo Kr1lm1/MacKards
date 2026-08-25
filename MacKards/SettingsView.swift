@@ -132,46 +132,12 @@ struct SettingsView: View {
                 section("Options", "slider.horizontal.3") {
                     optionRow("Labels", $settings.showLabels)
                     optionRow("Folders", $settings.showActions)
+                    optionRow("Submenu", $settings.showSubmenu)
                     optionRow("Haptics", $settings.haptics)
                     optionRow("Low Power", $settings.lowPower)
                     optionRow("Launch at Login", $settings.launchAtLogin)
                 }
-                
-                // Folders
-                if settings.showActions {
-                    section("Folders", "folder.fill") {
-                        ForEach(QuickAction.allActions, id: \.id) { act in
-                            HStack(spacing: 4) {
-                                Image(systemName: act.icon).frame(width: 14).foregroundColor(.accentColor).font(.system(size: 10))
-                                Text(act.name).font(.system(size: 11))
-                                Line().stroke(style: StrokeStyle(lineWidth: 0.5, dash: [2, 2]))
-                                    .foregroundColor(.secondary.opacity(0.4)).frame(height: 1)
-                                Toggle("", isOn: Binding(
-                                    get: { settings.enabledActions.contains(act.id) },
-                                    set: { on in
-                                        if on { settings.enabledActions.append(act.id) }
-                                        else { settings.enabledActions.removeAll { $0 == act.id } }
-                                    }
-                                )).toggleStyle(.switch).controlSize(.mini).labelsHidden()
-                            }
-                        }
-                        // Pinned custom folders
-                        if !settings.pinnedFolderPaths.isEmpty {
-                            Divider()
-                            ForEach(settings.pinnedFolderPaths, id: \.self) { path in
-                                HStack(spacing: 4) {
-                                    Image(systemName: "folder.fill").frame(width: 14).foregroundColor(.orange).font(.system(size: 10))
-                                    Text(URL(fileURLWithPath: path).lastPathComponent).font(.system(size: 11))
-                                    Spacer()
-                                    Button { settings.pinnedFolderPaths.removeAll { $0 == path } } label: {
-                                        Image(systemName: "xmark.circle.fill").font(.system(size: 10)).foregroundColor(.secondary.opacity(0.5))
-                                    }.buttonStyle(.plain)
-                                }
-                            }
-                        }
-                    }
-                }
-                
+
                 // Reset
                 Button { settings.resetToDefaults() } label: {
                     Label("Reset All", systemImage: "arrow.counterclockwise")
