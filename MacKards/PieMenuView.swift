@@ -40,7 +40,8 @@ struct PieMenuContentView: View {
     private func animateIn() {
         let n = total, lp = settings.lowPower, spd = settings.animSpeed
         if arc != nil {
-            shown = n; ringVis = true; menuScale = 1; menuOpacity = 1
+            shown = n; menuScale = 1; menuOpacity = 1
+            withAnimation(.easeOut(duration: 0.12)) { ringVis = true }
             return
         }
         if lp {
@@ -74,6 +75,7 @@ struct PieMenuContentView: View {
         let ring = settings.menuStyle == 1 && arc == nil
         let thick = settings.ringThickness
         let closing = state.isClosing
+        let subClosing = state.isSubmenuClosing
         let outline = Color.primary.opacity(0.125)
 
         return ZStack {
@@ -88,8 +90,6 @@ struct PieMenuContentView: View {
                     .animation(lp ? nil : .spring(response: 0.2, dampingFraction: 0.75), value: ringVis)
                     .animation(lp ? nil : .easeIn(duration: 0.1), value: closing)
             } else if let arcRange = arc {
-                let mid = (arcRange.lowerBound + arcRange.upperBound) / 2
-                let innerR = radius - thick/2
                 ZStack {
                     ArcShape(radius: radius, thickness: thick, start: arcRange.lowerBound, end: arcRange.upperBound)
                         .stroke(outline, style: StrokeStyle(lineWidth: thick + 3, lineCap: .butt))
@@ -97,10 +97,11 @@ struct PieMenuContentView: View {
                     ArcShape(radius: radius, thickness: thick, start: arcRange.lowerBound, end: arcRange.upperBound)
                         .stroke(lp ? AnyShapeStyle(lpColor) : AnyShapeStyle(settings.menuMaterial), style: StrokeStyle(lineWidth: thick, lineCap: .butt))
                         .frame(width: size, height: size)
-                    TrianglePointerShape(angle: mid, innerRadius: innerR, length: 16, baseAngle: 8 * .pi / 180)
-                        .fill(lp ? AnyShapeStyle(lpColor) : AnyShapeStyle(settings.menuMaterial))
-                        .frame(width: size, height: size)
                 }
+                .scaleEffect(subClosing ? 0.96 : (ringVis ? 1 : 0.96))
+                .opacity(subClosing ? 0 : (ringVis ? 1 : 0))
+                .animation(lp ? nil : .easeOut(duration: 0.12), value: ringVis)
+                .animation(lp ? nil : .easeIn(duration: 0.1), value: subClosing)
 
                 ForEach(0..<apps.count, id: \.self) { i in
                     let span = arcRange.upperBound - arcRange.lowerBound
@@ -279,22 +280,6 @@ struct ArcShape: Shape {
     }
 }
 
-struct TrianglePointerShape: Shape {
-    let angle: Double, innerRadius: CGFloat, length: CGFloat, baseAngle: Double
-    func path(in rect: CGRect) -> Path {
-        let c = CGPoint(x: rect.midX, y: rect.midY)
-        let a = angle * .pi / 180
-        let tip = CGPoint(x: c.x + cos(a) * (innerRadius - length), y: c.y + sin(a) * (innerRadius - length))
-        let b1 = CGPoint(x: c.x + cos(a - baseAngle) * innerRadius, y: c.y + sin(a - baseAngle) * innerRadius)
-        let b2 = CGPoint(x: c.x + cos(a + baseAngle) * innerRadius, y: c.y + sin(a + baseAngle) * innerRadius)
-        var p = Path()
-        p.move(to: tip)
-        p.addLine(to: b1)
-        p.addLine(to: b2)
-        p.closeSubpath()
-        return p
-    }
-}
 
 struct AnyShape: Shape {
     private let b: (CGRect)->Path

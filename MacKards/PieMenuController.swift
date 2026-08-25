@@ -124,7 +124,7 @@ final class PieMenuController {
         // Keep the same density (card size + gap) as the main ring
         let mainCard = min((2 * .pi * Double(s.radius)) / Double(max(totalMain, 1)), Double(s.cardSize))
         let gapSub = Double(s.cardGap) / 4.0
-        let minRadius = s.radius + s.ringThickness + 16
+        let minRadius = s.radius + s.ringThickness + 4
         let gapAng = gapSub / Double(minRadius) * 180 / .pi
         let iconAng = mainCard / Double(minRadius) * 180 / .pi
         let spanDeg = max(20.0, min(180.0, Double(n + 1) * gapAng + Double(n) * iconAng))
@@ -246,10 +246,13 @@ final class PieMenuController {
         if let m = submenuGlobalMonitor { NSEvent.removeMonitor(m); submenuGlobalMonitor = nil }
         submenuIconRects = []
         submenuGroupIndex = nil
-        PieMenuState.shared.isSubmenuClosing = false
         guard let win = submenuWindow else { return }
-        submenuWindow = nil
-        win.orderOut(nil)
+        PieMenuState.shared.isSubmenuClosing = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+            win.orderOut(nil)
+            self.submenuWindow = nil
+            PieMenuState.shared.isSubmenuClosing = false
+        }
     }
 
     private func cachedIcon(for path: String) -> NSImage {
