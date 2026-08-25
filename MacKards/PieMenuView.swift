@@ -121,13 +121,10 @@ struct PieMenuContentView: View {
                                 } else if st.hoveredApp?.id == apps[i].id {
                                     st.hoveredApp = nil
                                 }
-                                if on, settings.haptics {
-                                    let styles: [NSHapticFeedbackManager.FeedbackPattern] = [.levelChange, .generic, .alignment]
-                                    let style = styles[min(max(settings.hapticStyle, 0), styles.count - 1)]
-                                    NSHapticFeedbackManager.defaultPerformer.perform(style, performanceTime: .now)
-                                }
+                                if on { haptic() }
                             }
                             .offset(x: cx, y: cy)
+                            .scaleEffect(hovered == i ? settings.hoverScale : 1)
                             .animation(.spring(response: 0.18, dampingFraction: 0.75), value: hovered)
                             .onTapGesture { onSelect(apps[i]) }
                     }
@@ -201,11 +198,7 @@ struct PieMenuContentView: View {
                         if g < groups.count { onGroup(groups[g]) }
                     }
                 }
-                if prev != i && settings.haptics {
-                    let styles: [NSHapticFeedbackManager.FeedbackPattern] = [.levelChange, .generic, .alignment]
-                    let style = styles[min(max(settings.hapticStyle, 0), styles.count - 1)]
-                    NSHapticFeedbackManager.defaultPerformer.perform(style, performanceTime: .now)
-                }
+                if prev != i { haptic() }
             } else { st.hoveredApp = nil; st.hoveredAction = nil }
         }
         .onDrop(of: [.fileURL], isTargeted: nil) { p in
@@ -220,6 +213,13 @@ struct PieMenuContentView: View {
         .animation(lp ? nil : .spring(response: 0.18, dampingFraction: 0.75), value: vis)
     }
     
+    private func haptic() {
+        guard settings.haptics else { return }
+        let styles: [NSHapticFeedbackManager.FeedbackPattern] = [.levelChange, .generic, .alignment]
+        let style = styles[min(max(settings.hapticStyle, 0), styles.count - 1)]
+        NSHapticFeedbackManager.defaultPerformer.perform(style, performanceTime: .now)
+    }
+
     @ViewBuilder private func cardIcon(_ i: Int, _ size: CGFloat) -> some View {
         let scale = settings.iconScale
         if i < apps.count {

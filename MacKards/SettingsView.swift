@@ -4,7 +4,6 @@ import UniformTypeIdentifiers
 
 struct SettingsView: View {
     @ObservedObject var settings = AppSettings.shared
-    @State private var apps: [AppItem] = []
     @State private var tab = 0
     @State private var iconCache: [String: NSImage] = [:]
     
@@ -33,18 +32,14 @@ struct SettingsView: View {
                 default: aboutTab
                 }
             }
-            .id(tab)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .transition(.move(edge: .trailing).combined(with: .opacity))
-            .animation(.easeInOut(duration: 0.22), value: tab)
         }
         .frame(width: 520, height: 560)
-        .onAppear { AppFinder.shared.getApps { apps = $0 } }
     }
     
     private func tabBtn(_ title: String, _ icon: String, _ idx: Int) -> some View {
         Button {
-            withAnimation(.easeInOut(duration: 0.1)) { tab = idx }
+            tab = idx
         } label: {
             HStack(spacing: 4) {
                 Image(systemName: icon).font(.system(size: 11))
@@ -59,7 +54,7 @@ struct SettingsView: View {
     
     private func modeBtn(_ title: String, _ idx: Int) -> some View {
         Button {
-            withAnimation(.easeInOut(duration: 0.1)) { settings.menuStyle = idx }
+            settings.menuStyle = idx
         } label: {
             Text(title)
                 .font(.system(size: 10, weight: .medium))
@@ -74,7 +69,7 @@ struct SettingsView: View {
     
     private func animBtnSmall(_ title: String, _ idx: Int) -> some View {
         Button {
-            withAnimation(.easeInOut(duration: 0.1)) { settings.openAnim = idx }
+            settings.openAnim = idx
         } label: {
             Text(title)
                 .font(.system(size: 10, weight: .medium))
@@ -178,7 +173,7 @@ struct SettingsView: View {
                 }
                 
                 // Reset
-                Button { withAnimation { settings.resetToDefaults() } } label: {
+                Button { settings.resetToDefaults() } label: {
                     Label("Reset All", systemImage: "arrow.counterclockwise")
                         .font(.system(size: 11)).padding(.vertical, 4).padding(.horizontal, 10)
                         .contentShape(Rectangle())
@@ -224,7 +219,6 @@ struct SettingsView: View {
                     }.padding(.vertical, 2).contentShape(Rectangle())
                 }
                 .onMove { from, to in settings.pinnedAppPaths.move(fromOffsets: from, toOffset: to) }
-                .transition(.move(edge: .leading).combined(with: .opacity))
             } header: {
                 Text("Pinned Apps").font(.system(size: 13, weight: .semibold))
             } footer: {
@@ -282,7 +276,6 @@ struct SettingsView: View {
                                 }.buttonStyle(.plain)
                             }
                         }
-                        .transition(.move(edge: .leading).combined(with: .opacity))
                     }
                     Button {
                         settings.pinnedGroups.append(AppGroup(name: "New Group", paths: []))
@@ -297,8 +290,6 @@ struct SettingsView: View {
         .listStyle(.plain)
         .environment(\.defaultMinListRowHeight, 30)
         .padding(.horizontal, 2)
-        .animation(.easeInOut(duration: 0.2), value: settings.pinnedAppPaths.count)
-        .animation(.easeInOut(duration: 0.2), value: settings.pinnedGroups.count)
     }
 
     // MARK: - About
