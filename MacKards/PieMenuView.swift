@@ -109,7 +109,7 @@ struct PieMenuContentView: View {
                         let cx = cos(rad) * rr
                         let cy = sin(rad) * rr
                         cardIcon(i, card)
-                            .frame(width: thick, height: thick)
+                            .frame(width: card, height: card)
                             .contentShape(Circle())
                             .onHover { on in
                                 hovered = on ? i : nil

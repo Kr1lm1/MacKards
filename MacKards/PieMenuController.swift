@@ -110,7 +110,7 @@ final class PieMenuController {
         PieMenuState.shared.isSubmenuClosing = false
         submenuGroupIndex = groupIndex
         let s = AppSettings.shared
-        let apps = group.paths.compactMap { path -> AppItem? in
+        let apps = group.paths.prefix(8).compactMap { path -> AppItem? in
             guard FileManager.default.fileExists(atPath: path) else { return nil }
             let url = URL(fileURLWithPath: path)
             return AppItem(id: url, name: url.deletingPathExtension().lastPathComponent, url: url, icon: cachedIcon(for: path))

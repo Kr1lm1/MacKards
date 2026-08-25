@@ -192,6 +192,7 @@ struct SettingsView: View {
         panel.allowedContentTypes = [.application]
         if panel.runModal() == .OK {
             for url in panel.urls where url.pathExtension == "app" {
+                if settings.pinnedGroups[index].paths.count >= 8 { break }
                 if !settings.pinnedGroups[index].paths.contains(url.path) {
                     settings.pinnedGroups[index].paths.append(url.path)
                 }
@@ -288,7 +289,7 @@ struct SettingsView: View {
                                             var isDir: ObjCBool = false
                                             if FileManager.default.fileExists(atPath: url.path, isDirectory: &isDir), isDir.boolValue {
                                                 let apps = (try? FileManager.default.contentsOfDirectory(atPath: url.path))?
-                                                    .filter { $0.hasSuffix(".app") }.map { url.appendingPathComponent($0).path } ?? []
+                                                    .filter { $0.hasSuffix(".app") }.prefix(8).map { url.appendingPathComponent($0).path } ?? []
                                                 settings.pinnedGroups.append(AppGroup(name: url.lastPathComponent, paths: apps))
                                             }
                                         }
