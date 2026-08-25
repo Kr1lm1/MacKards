@@ -221,17 +221,23 @@ struct SettingsView: View {
                 }
                 .onMove { from, to in settings.pinnedAppPaths.move(fromOffsets: from, toOffset: to) }
             } header: {
-                HStack {
-                    Text("Pinned Apps").font(.system(size: 13, weight: .semibold))
-                    Spacer()
-                    Menu {
-                        ForEach(apps.filter { !settings.pinnedAppPaths.contains($0.url.path) }.prefix(30)) { app in
-                            Button(app.name) { settings.pinnedAppPaths.append(app.url.path) }
+                Text("Pinned Apps").font(.system(size: 13, weight: .semibold))
+            } footer: {
+                Button {
+                    let panel = NSOpenPanel()
+                    panel.canChooseFiles = true; panel.canChooseDirectories = false
+                    panel.allowsMultipleSelection = true
+                    panel.allowedContentTypes = [.application]
+                    if panel.runModal() == .OK {
+                        for url in panel.urls where url.pathExtension == "app" {
+                            if !settings.pinnedAppPaths.contains(url.path) {
+                                settings.pinnedAppPaths.append(url.path)
+                            }
                         }
-                    } label: {
-                        Image(systemName: "plus.circle.fill").font(.system(size: 14))
-                    }.menuStyle(.borderlessButton).frame(width: 30)
-                }
+                    }
+                } label: {
+                    Label("Add app", systemImage: "plus.circle.fill").font(.system(size: 11)).foregroundColor(.accentColor)
+                }.buttonStyle(.plain).frame(maxWidth: .infinity, alignment: .leading)
             }
 
             // Groups
