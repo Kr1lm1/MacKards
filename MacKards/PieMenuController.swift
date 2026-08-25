@@ -155,7 +155,10 @@ final class PieMenuController {
 
         if wasOpen, let win = submenuWindow {
             win.contentView = host
-            win.setFrame(frame, display: true, animate: true)
+            NSAnimationContext.runAnimationGroup({ ctx in
+                ctx.duration = 0.18
+                win.animator().setFrame(frame, display: true)
+            })
         } else {
             let win = NSWindow(contentRect: frame, styleMask: .borderless, backing: .buffered, defer: false)
             win.level = .floating; win.isOpaque = false; win.backgroundColor = .clear

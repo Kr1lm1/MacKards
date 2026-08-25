@@ -131,7 +131,7 @@ struct SettingsView: View {
                 // Options
                 section("Options", "slider.horizontal.3") {
                     optionRow("Labels", $settings.showLabels)
-                    optionRow("Projects", $settings.showActions)
+                    optionRow("Places", $settings.showActions)
                     optionRow("Submenu", $settings.showSubmenu)
                     optionRow("Haptics", $settings.haptics)
                     optionRow("Low Power", $settings.lowPower)
