@@ -11,6 +11,7 @@ struct PieMenuContentView: View {
     let onSelect: (AppItem) -> Void
     let onAction: (QuickAction) -> Void
     let onGroup: (AppGroup) -> Void
+    let onFolder: (QuickAction) -> Void
     let onCloseSubmenu: () -> Void
     var arc: ClosedRange<Double>? = nil
     var bgArc: ClosedRange<Double>? = nil
@@ -193,7 +194,16 @@ struct PieMenuContentView: View {
             let st = PieMenuState.shared
             if on {
                 if i < apps.count { st.hoveredApp = apps[i]; st.hoveredAction = nil; if arc == nil { onCloseSubmenu() } }
-                else if i < apps.count + actions.count { st.hoveredApp = nil; st.hoveredAction = actions[i - apps.count]; if arc == nil { onCloseSubmenu() } }
+                else if i < apps.count + actions.count {
+                    let act = actions[i - apps.count]
+                    if let url = act.targetURL, url.hasDirectoryPath, FileManager.default.fileExists(atPath: url.path) {
+                        st.hoveredApp = nil; st.hoveredAction = nil
+                        if arc == nil { onFolder(act) }
+                    } else {
+                        st.hoveredApp = nil; st.hoveredAction = act
+                        if arc == nil { onCloseSubmenu() }
+                    }
+                }
                 else {
                     st.hoveredApp = nil; st.hoveredAction = nil
                     if arc == nil {

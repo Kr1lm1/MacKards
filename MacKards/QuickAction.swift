@@ -37,15 +37,31 @@ struct QuickAction: Identifiable {
     static let allActions: [QuickAction] = {
         let fm = FileManager.default
         let home = fm.homeDirectoryForCurrentUser
+        func folderIcon(_ url: URL?) -> NSImage? {
+            guard let url else { return nil }
+            let img = NSWorkspace.shared.icon(forFile: url.path)
+            img.size = NSSize(width: 64, height: 64)
+            return img
+        }
+        func folder(_ id: String, _ name: String, _ icon: String, _ url: URL?) -> QuickAction {
+            .init(id: id, name: name, icon: icon, targetURL: url, folderImage: folderIcon(url)) {
+                guard let url else { return }
+                NSWorkspace.shared.open(url)
+            }
+        }
+        let downloads = fm.urls(for: .downloadsDirectory, in: .userDomainMask).first
+        let documents = fm.urls(for: .documentDirectory, in: .userDomainMask).first
+        let desktop = fm.urls(for: .desktopDirectory, in: .userDomainMask).first
+        let trash = fm.urls(for: .trashDirectory, in: .userDomainMask).first
+        let iCloud = home.appendingPathComponent("Library/Mobile Documents/com~apple~CloudDocs")
         return [
-            .init(id:"downloads",name:"Downloads",icon:"arrow.down.circle",targetURL:fm.urls(for:.downloadsDirectory,in:.userDomainMask).first){NSWorkspace.shared.open(fm.urls(for:.downloadsDirectory,in:.userDomainMask).first!)},
-            .init(id:"documents",name:"Documents",icon:"doc.fill",targetURL:fm.urls(for:.documentDirectory,in:.userDomainMask).first){NSWorkspace.shared.open(fm.urls(for:.documentDirectory,in:.userDomainMask).first!)},
-            .init(id:"desktop",name:"Desktop",icon:"desktopcomputer",targetURL:fm.urls(for:.desktopDirectory,in:.userDomainMask).first){NSWorkspace.shared.open(fm.urls(for:.desktopDirectory,in:.userDomainMask).first!)},
-            .init(id:"home",name:"Home",icon:"house.fill",targetURL:home){NSWorkspace.shared.open(home)},
-            .init(id:"applications",name:"Apps",icon:"square.grid.2x2.fill",targetURL:URL(fileURLWithPath:"/Applications")){NSWorkspace.shared.open(URL(fileURLWithPath:"/Applications"))},
-            .init(id:"trash",name:"Trash",icon:"trash",targetURL:fm.urls(for:.trashDirectory,in:.userDomainMask).first){NSWorkspace.shared.open(fm.urls(for:.trashDirectory,in:.userDomainMask).first!)},
-            .init(id:"icloud",name:"iCloud",icon:"icloud.fill",targetURL:home.appendingPathComponent("Library/Mobile Documents/com~apple~CloudDocs")){
-                let url=home.appendingPathComponent("Library/Mobile Documents/com~apple~CloudDocs");NSWorkspace.shared.open(fm.fileExists(atPath:url.path) ? url : home)},
+            folder("downloads", "Downloads", "arrow.down.circle", downloads),
+            folder("documents", "Documents", "doc.fill", documents),
+            folder("desktop", "Desktop", "desktopcomputer", desktop),
+            folder("home", "Home", "house.fill", home),
+            folder("applications", "Apps", "square.grid.2x2.fill", URL(fileURLWithPath: "/Applications")),
+            folder("trash", "Trash", "trash", trash),
+            folder("icloud", "iCloud", "icloud.fill", fm.fileExists(atPath: iCloud.path) ? iCloud : home),
         ]
     }()
 }

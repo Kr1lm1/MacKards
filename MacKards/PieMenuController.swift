@@ -62,6 +62,7 @@ final class PieMenuController {
         win.hasShadow = false; win.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         win.isReleasedWhenClosed = false
 
+        let totalMain = apps.count + actions.count + groups.count
         let host = NSHostingView(rootView: PieMenuContentView(
             apps: apps, actions: actions, groups: groups, settings: s,
             onSelect: { [weak self] in self?.launchAndClose($0) },
@@ -69,7 +70,13 @@ final class PieMenuController {
             onGroup: { [weak self] group in
                 guard let self else { return }
                 let idx = self.mainGroups.firstIndex(where: { $0.id == group.id }) ?? 0
-                self.openSubmenu(group: group, totalMain: self.mainApps.count + self.mainActions.count + self.mainGroups.count, groupIndex: idx)
+                self.openSubmenu(paths: Array(group.paths.prefix(8)), totalMain: totalMain, index: self.mainApps.count + self.mainActions.count + idx)
+            },
+            onFolder: { [weak self] act in
+                guard let self, let url = act.targetURL else { return }
+                let idx = self.mainActions.firstIndex(where: { $0.id == act.id }) ?? 0
+                let contents = self.folderContents(url)
+                self.openSubmenu(paths: contents, totalMain: totalMain, index: self.mainApps.count + idx)
             },
             onCloseSubmenu: { [weak self] in self?.closeSubmenu() }))
         host.frame = NSRect(origin: .zero, size: frame.size)
@@ -103,12 +110,12 @@ final class PieMenuController {
         hide()
     }
 
-    private func openSubmenu(group: AppGroup, totalMain: Int, groupIndex: Int) {
-        if submenuWindow != nil, submenuGroupIndex == groupIndex { return }
+    private func openSubmenu(paths: [String], totalMain: Int, index: Int) {
+        if submenuWindow != nil, submenuGroupIndex == index { return }
         if submenuWindow != nil { closeOldSubmenuImmediately() }
-        submenuGroupIndex = groupIndex
+        submenuGroupIndex = index
         let s = AppSettings.shared
-        let apps = group.paths.prefix(8).compactMap { path -> AppItem? in
+        let apps = paths.prefix(8).compactMap { path -> AppItem? in
             guard FileManager.default.fileExists(atPath: path) else { return nil }
             let url = URL(fileURLWithPath: path)
             return AppItem(id: url, name: url.deletingPathExtension().lastPathComponent, url: url, icon: cachedIcon(for: path))
@@ -131,7 +138,7 @@ final class PieMenuController {
         let frame = NSRect(x: menuCenter.x - side/2, y: menuCenter.y - side/2, width: side, height: side)
 
         let stepDeg = 360.0 / Double(max(totalMain, 1))
-        let dir = -90.0 + stepDeg * Double(mainApps.count + mainActions.count + groupIndex) + stepDeg / 2
+        let dir = -90.0 + stepDeg * Double(index) + stepDeg / 2
         let iconStart = dir - iconSpanDeg / 2
         let iconArc = iconStart...(iconStart + iconSpanDeg)
         let bgStart = iconStart - bgPadAng
@@ -145,7 +152,7 @@ final class PieMenuController {
         let host = NSHostingView(rootView: PieMenuContentView(
             apps: apps, actions: [], groups: [], settings: s,
             onSelect: { [weak self] app in self?.launchAndClose(app) },
-            onAction: { _ in }, onGroup: { _ in },
+            onAction: { _ in }, onGroup: { _ in }, onFolder: { _ in },
             onCloseSubmenu: {},
             arc: iconArc, bgArc: bgArc, edgePadDeg: edgePadAng, midGapDeg: midGapAng,
             radiusOverride: radius, cardSizeOverride: CGFloat(cardSub)))
@@ -153,7 +160,12 @@ final class PieMenuController {
         win.contentView = host
         self.submenuWindow = win
         win.orderFrontRegardless()
+    }
 
+    private func folderContents(_ url: URL) -> [String] {
+        let fm = FileManager.default
+        guard let items = try? fm.contentsOfDirectory(atPath: url.path) else { return [] }
+        return items.filter { !$0.hasPrefix(".") }.prefix(8).map { url.appendingPathComponent($0).path }
     }
 
     private func closeOldSubmenuImmediately() {
