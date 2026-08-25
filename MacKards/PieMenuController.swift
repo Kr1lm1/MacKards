@@ -75,7 +75,8 @@ final class PieMenuController {
                 guard let self else { return }
                 let idx = self.mainGroups.firstIndex(where: { $0.id == group.id }) ?? 0
                 self.openSubmenu(group: group, at: NSEvent.mouseLocation, totalMain: self.mainApps.count + self.mainActions.count + self.mainGroups.count, groupIndex: idx)
-            }))
+            },
+            onCloseSubmenu: { [weak self] in self?.closeSubmenu() }))
         host.frame = NSRect(origin: .zero, size: frame.size)
         win.contentView = host
         self.window = win
@@ -108,7 +109,7 @@ final class PieMenuController {
     }
 
     private func openSubmenu(group: AppGroup, at point: NSPoint, totalMain: Int, groupIndex: Int) {
-        if submenuWindow != nil, submenuGroupIndex == groupIndex { closeSubmenu(); return }
+        if submenuWindow != nil, submenuGroupIndex == groupIndex { return }
         if submenuWindow != nil { closeOldSubmenuImmediately() }
         PieMenuState.shared.isSubmenuClosing = false
         submenuGroupIndex = groupIndex
@@ -123,7 +124,7 @@ final class PieMenuController {
         // Keep the same density (card size + gap) as the main ring
         let mainCard = min((2 * .pi * Double(s.radius)) / Double(max(totalMain, 1)), Double(s.cardSize))
         let gapSub = Double(s.cardGap) / 4.0
-        let minRadius = s.radius + s.ringThickness + 6
+        let minRadius = s.radius + s.ringThickness + 16
         let gapAng = gapSub / Double(minRadius) * 180 / .pi
         let iconAng = mainCard / Double(minRadius) * 180 / .pi
         let spanDeg = max(20.0, min(180.0, Double(n + 1) * gapAng + Double(n) * iconAng))
@@ -164,6 +165,7 @@ final class PieMenuController {
             apps: apps, actions: [], groups: [], settings: s,
             onSelect: { [weak self] app in self?.launchAndClose(app) },
             onAction: { _ in }, onGroup: { _ in },
+            onCloseSubmenu: {},
             arc: arcRange, radiusOverride: radius, cardSizeOverride: CGFloat(cardSub)))
         host.frame = NSRect(origin: .zero, size: frame.size)
         win.contentView = host

@@ -11,6 +11,7 @@ struct PieMenuContentView: View {
     let onSelect: (AppItem) -> Void
     let onAction: (QuickAction) -> Void
     let onGroup: (AppGroup) -> Void
+    let onCloseSubmenu: () -> Void
     var arc: ClosedRange<Double>? = nil
     var radiusOverride: CGFloat? = nil
     var cardSizeOverride: CGFloat? = nil
@@ -96,10 +97,7 @@ struct PieMenuContentView: View {
                     ArcShape(radius: radius, thickness: thick, start: arcRange.lowerBound, end: arcRange.upperBound)
                         .stroke(lp ? AnyShapeStyle(lpColor) : AnyShapeStyle(settings.menuMaterial), style: StrokeStyle(lineWidth: thick, lineCap: .butt))
                         .frame(width: size, height: size)
-                    TrianglePointerShape(angle: mid, innerRadius: innerR, length: 14, baseAngle: 10 * .pi / 180)
-                        .fill(outline)
-                        .frame(width: size, height: size)
-                    TrianglePointerShape(angle: mid, innerRadius: innerR, length: 14, baseAngle: 10 * .pi / 180)
+                    TrianglePointerShape(angle: mid, innerRadius: innerR, length: 16, baseAngle: 8 * .pi / 180)
                         .fill(lp ? AnyShapeStyle(lpColor) : AnyShapeStyle(settings.menuMaterial))
                         .frame(width: size, height: size)
                 }
@@ -185,8 +183,8 @@ struct PieMenuContentView: View {
             let prev = hovered; hovered = on ? i : nil
             let st = PieMenuState.shared
             if on {
-                if i < apps.count { st.hoveredApp = apps[i]; st.hoveredAction = nil }
-                else if i < apps.count + actions.count { st.hoveredApp = nil; st.hoveredAction = actions[i - apps.count] }
+                if i < apps.count { st.hoveredApp = apps[i]; st.hoveredAction = nil; if arc == nil { onCloseSubmenu() } }
+                else if i < apps.count + actions.count { st.hoveredApp = nil; st.hoveredAction = actions[i - apps.count]; if arc == nil { onCloseSubmenu() } }
                 else {
                     st.hoveredApp = nil; st.hoveredAction = nil
                     if arc == nil {
