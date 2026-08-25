@@ -129,7 +129,7 @@ final class PieMenuController {
         let frame = NSRect(x: menuCenter.x - side/2, y: menuCenter.y - side/2, width: side, height: side)
 
         let stepDeg = 360.0 / Double(max(totalMain, 1))
-        let dir = -90.0 + stepDeg * Double(mainApps.count + mainActions.count + groupIndex) + stepDeg / 2
+        let dir = -90.0 + stepDeg * Double(mainApps.count + mainActions.count + groupIndex) + stepDeg / 2 - 20.0
         let start = dir - spanDeg / 2
         let arcRange = start...(start + spanDeg)
 
