@@ -94,10 +94,10 @@ struct PieMenuContentView: View {
                 let bgThick = max(26, thick * 0.85)
                 ZStack {
                     ArcShape(radius: radius, thickness: bgThick, start: bgRange.lowerBound, end: bgRange.upperBound)
-                        .stroke(outline, style: StrokeStyle(lineWidth: bgThick + 3, lineCap: .butt))
+                        .stroke(outline, style: StrokeStyle(lineWidth: bgThick + 3, lineCap: .round))
                         .frame(width: size, height: size)
                     ArcShape(radius: radius, thickness: bgThick, start: bgRange.lowerBound, end: bgRange.upperBound)
-                        .stroke(lp ? AnyShapeStyle(lpColor) : AnyShapeStyle(settings.menuMaterial), style: StrokeStyle(lineWidth: bgThick, lineCap: .butt))
+                        .stroke(lp ? AnyShapeStyle(lpColor) : AnyShapeStyle(settings.menuMaterial), style: StrokeStyle(lineWidth: bgThick, lineCap: .round))
                         .frame(width: size, height: size)
                     ForEach(0..<apps.count, id: \.self) { i in
                         let span = arcRange.upperBound - arcRange.lowerBound
