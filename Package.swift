@@ -10,7 +10,8 @@ let package = Package(
             path: "MacKards",
             exclude: ["Info.plist"],
             swiftSettings: [
-                .swiftLanguageMode(.v5)
+                .swiftLanguageMode(.v5),
+                .unsafeFlags(["-Osize"])
             ]
         )
     ]

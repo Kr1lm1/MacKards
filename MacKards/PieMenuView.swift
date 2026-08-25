@@ -302,3 +302,87 @@ struct AnyShape: Shape {
     init<S:Shape>(_ s:S){b={s.path(in:$0)}}
     func path(in rect:CGRect)->Path{b(rect)}
 }
+
+// MARK: - Submenu
+
+final class SubmenuState: ObservableObject {
+    @Published var apps: [AppItem] = []
+    @Published var dir: Double = -90
+    @Published var radius: CGFloat = 0
+    @Published var cardSize: CGFloat = 0
+    @Published var edgePadDeg: Double = 0
+    @Published var midGapDeg: Double = 0
+}
+
+private func performHaptic(_ settings: AppSettings) {
+    guard settings.haptics else { return }
+    let styles: [NSHapticFeedbackManager.FeedbackPattern] = [.levelChange, .generic, .alignment]
+    let style = styles[min(max(settings.hapticStyle, 0), styles.count - 1)]
+    NSHapticFeedbackManager.defaultPerformer.perform(style, performanceTime: .now)
+}
+
+struct SubmenuView: View {
+    @ObservedObject var state: SubmenuState
+    let settings: AppSettings
+    let onSelect: (AppItem) -> Void
+    @State private var hovered: Int? = nil
+    @State private var ringVis = false
+
+    var body: some View {
+        guard state.radius > 0 else { return AnyView(Color.clear) }
+        let lp = settings.lowPower
+        let outline = Color.primary.opacity(0.125)
+        let bgThick = max(26, settings.ringThickness * 0.85)
+        let outerR = state.radius + bgThick / 2
+        let innerR = max(state.radius - bgThick / 2, 0)
+        let size = state.radius * 2 + state.cardSize + 80
+        let n = Double(max(state.apps.count, 1))
+        let iconAng = state.cardSize / state.radius * 180 / .pi
+        let edgePad = state.edgePadDeg
+        let midGap = state.midGapDeg
+        let iconSpan = 2 * edgePad + max(0, n - 1) * midGap + n * iconAng
+        let bgSpan = min(260.0, iconSpan + 2 * 0.625)
+        let iconStart = -90.0 - iconSpan / 2
+        let bgStart = iconStart - 0.625
+        let rotation = state.dir + 90.0
+
+        return AnyView(ZStack {
+            ArcSegmentShape(outerRadius: outerR, innerRadius: innerR, start: bgStart, end: bgStart + bgSpan)
+                .fill(lp ? AnyShapeStyle(lpColor) : AnyShapeStyle(settings.menuMaterial))
+                .overlay(ArcSegmentShape(outerRadius: outerR, innerRadius: innerR, start: bgStart, end: bgStart + bgSpan).stroke(outline, lineWidth: 1.5))
+                .frame(width: size, height: size)
+
+            ForEach(0..<state.apps.count, id: \.self) { i in
+                let ang = iconStart + edgePad + iconAng / 2 + Double(i) * (iconAng + midGap)
+                let rad = ang * .pi / 180
+                let rr = state.radius + (hovered == i && !lp ? 6.0 : 0.0)
+                let cx = cos(rad) * rr
+                let cy = sin(rad) * rr
+                Image(nsImage: state.apps[i].icon)
+                    .resizable().aspectRatio(contentMode: .fit)
+                    .frame(width: state.cardSize * settings.iconScale, height: state.cardSize * settings.iconScale)
+                    .contentShape(Circle())
+                    .onHover { on in
+                        hovered = on ? i : nil
+                        if on {
+                            PieMenuState.shared.hoveredApp = state.apps[i]
+                            performHaptic(settings)
+                        } else if PieMenuState.shared.hoveredApp?.id == state.apps[i].id {
+                            PieMenuState.shared.hoveredApp = nil
+                        }
+                    }
+                    .offset(x: cx, y: cy)
+                    .rotationEffect(.degrees(-rotation))
+                    .animation(.spring(response: 0.18, dampingFraction: 0.75), value: hovered)
+                    .onTapGesture { onSelect(state.apps[i]) }
+            }
+        }
+        .frame(width: size, height: size)
+        .rotationEffect(.degrees(rotation))
+        .scaleEffect(ringVis ? 1 : 0.96)
+        .opacity(ringVis ? 1 : 0)
+        .animation(lp ? nil : .easeOut(duration: 0.12), value: ringVis)
+        .animation(lp ? nil : .easeOut(duration: 0.18), value: state.dir)
+        .onAppear { withAnimation(.easeOut(duration: 0.12)) { ringVis = true } })
+    }
+}

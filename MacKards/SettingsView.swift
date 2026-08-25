@@ -186,7 +186,7 @@ struct SettingsView: View {
                 }
                 .onMove { from, to in settings.pinnedAppPaths.move(fromOffsets: from, toOffset: to) }
             } header: {
-                Text("Pinned Apps").font(.system(size: 13, weight: .semibold))
+                Text("Pinned apps & folders").font(.system(size: 13, weight: .semibold))
             } footer: {
                 Button {
                     let panel = NSOpenPanel()

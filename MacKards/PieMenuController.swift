@@ -11,6 +11,7 @@ final class PieMenuState: ObservableObject {
 final class PieMenuController {
     private var window: NSWindow?
     private var submenuWindow: NSWindow?
+    private var submenuState = SubmenuState()
     private var visible = false
     private var menuCenter: NSPoint = .zero
     private var submenuGroupIndex: Int?
@@ -112,7 +113,6 @@ final class PieMenuController {
 
     private func openSubmenu(paths: [String], totalMain: Int, index: Int) {
         if submenuWindow != nil, submenuGroupIndex == index { return }
-        let wasOpen = submenuWindow != nil
         submenuGroupIndex = index
         let s = AppSettings.shared
         let apps = paths.prefix(8).compactMap { path -> AppItem? in
@@ -130,42 +130,31 @@ final class PieMenuController {
         let cardSub = mainCard
         let edgePadAng = 1.25
         let iconSpanDeg = max(30.0, 2 * edgePadAng + max(0.0, Double(n - 1)) * midGapAng + Double(n) * iconAng)
-        let bgPadAng = 0.625
-        let bgSpanDeg = min(260.0, iconSpanDeg + 2 * bgPadAng)
         let radius = minRadius
-
         let side = radius * 2 + CGFloat(cardSub) + 80
         let frame = NSRect(x: menuCenter.x - side/2, y: menuCenter.y - side/2, width: side, height: side)
-
         let stepDeg = 360.0 / Double(max(totalMain, 1))
         let dir = -90.0 + stepDeg * Double(index) + stepDeg / 2
-        let iconStart = dir - iconSpanDeg / 2
-        let iconArc = iconStart...(iconStart + iconSpanDeg)
-        let bgStart = iconStart - bgPadAng
-        let bgArc = bgStart...(bgStart + bgSpanDeg)
 
-        let host = NSHostingView(rootView: PieMenuContentView(
-            apps: apps, actions: [], groups: [], settings: s,
-            onSelect: { [weak self] app in self?.launchAndClose(app) },
-            onAction: { _ in }, onGroup: { _ in }, onFolder: { _ in },
-            onCloseSubmenu: {},
-            arc: iconArc, bgArc: bgArc, edgePadDeg: edgePadAng, midGapDeg: midGapAng,
-            radiusOverride: radius, cardSizeOverride: CGFloat(cardSub)))
-        host.frame = NSRect(origin: .zero, size: frame.size)
+        submenuState.apps = apps
+        submenuState.radius = radius
+        submenuState.cardSize = CGFloat(cardSub)
+        submenuState.edgePadDeg = edgePadAng
+        submenuState.midGapDeg = midGapAng
 
-        if wasOpen, let win = submenuWindow {
+        if let win = submenuWindow {
+            withAnimation(.easeOut(duration: 0.18)) { submenuState.dir = dir }
             NSAnimationContext.runAnimationGroup({ ctx in
                 ctx.duration = 0.18
                 win.animator().setFrame(frame, display: true)
-            }, completionHandler: {
-                win.contentView = host
             })
         } else {
+            submenuState.dir = dir
             let win = NSWindow(contentRect: frame, styleMask: .borderless, backing: .buffered, defer: false)
             win.level = .floating; win.isOpaque = false; win.backgroundColor = .clear
             win.hasShadow = false; win.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
             win.isReleasedWhenClosed = false
-            win.contentView = host
+            win.contentView = NSHostingView(rootView: SubmenuView(state: submenuState, settings: s, onSelect: { [weak self] app in self?.launchAndClose(app) }))
             self.submenuWindow = win
             win.orderFrontRegardless()
         }
