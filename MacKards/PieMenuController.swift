@@ -116,8 +116,8 @@ final class PieMenuController {
         let n = max(apps.count, 1)
 
         let mainCard = min((2 * .pi * Double(s.radius)) / Double(max(totalMain, 1)), Double(s.cardSize))
-        let gapSub = 4.0
-        let minRadius = s.radius + s.ringThickness + 8
+        let gapSub = 2.0
+        let minRadius = s.radius + s.ringThickness * 0.5 + 4
         let gapAng = gapSub / Double(minRadius) * 180 / .pi
         let iconAng = mainCard / Double(minRadius) * 180 / .pi
         let cardSub = mainCard
