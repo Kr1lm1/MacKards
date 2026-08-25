@@ -97,36 +97,35 @@ struct PieMenuContentView: View {
                     ArcShape(radius: radius, thickness: thick, start: arcRange.lowerBound, end: arcRange.upperBound)
                         .stroke(lp ? AnyShapeStyle(lpColor) : AnyShapeStyle(settings.menuMaterial), style: StrokeStyle(lineWidth: thick, lineCap: .butt))
                         .frame(width: size, height: size)
+                    ForEach(0..<apps.count, id: \.self) { i in
+                        let span = arcRange.upperBound - arcRange.lowerBound
+                        let n = Double(max(apps.count, 1))
+                        let iconAng = card / radius * 180 / .pi
+                        let gapAng = max(2.0, (span - n * iconAng) / (n + 1))
+                        let ang = arcRange.lowerBound + gapAng + Double(i) * (iconAng + gapAng)
+                        let rad = ang * .pi / 180
+                        let jump = (hovered == i && !lp) ? 6.0 : 0.0
+                        let rr = radius + jump
+                        let cx = cos(rad) * rr
+                        let cy = sin(rad) * rr
+                        cardIcon(i, card)
+                            .frame(width: thick, height: thick)
+                            .contentShape(Circle())
+                            .onHover { on in
+                                hovered = on ? i : nil
+                                if on, settings.haptics {
+                                    NSHapticFeedbackManager.defaultPerformer.perform([.levelChange,.generic,.alignment][settings.hapticStyle], performanceTime: .now)
+                                }
+                            }
+                            .offset(x: cx, y: cy)
+                            .animation(.spring(response: 0.18, dampingFraction: 0.75), value: hovered)
+                            .onTapGesture { onSelect(apps[i]) }
+                    }
                 }
                 .scaleEffect(subClosing ? 0.96 : (ringVis ? 1 : 0.96))
                 .opacity(subClosing ? 0 : (ringVis ? 1 : 0))
                 .animation(lp ? nil : .easeOut(duration: 0.12), value: ringVis)
                 .animation(lp ? nil : .easeIn(duration: 0.1), value: subClosing)
-
-                ForEach(0..<apps.count, id: \.self) { i in
-                    let span = arcRange.upperBound - arcRange.lowerBound
-                    let n = Double(max(apps.count, 1))
-                    let iconAng = card / radius * 180 / .pi
-                    let gapAng = max(2.0, (span - n * iconAng) / (n + 1))
-                    let ang = arcRange.lowerBound + gapAng + Double(i) * (iconAng + gapAng)
-                    let rad = ang * .pi / 180
-                    let jump = (hovered == i && !lp) ? 6.0 : 0.0
-                    let rr = radius + jump
-                    let cx = cos(rad) * rr
-                    let cy = sin(rad) * rr
-                    cardIcon(i, card)
-                        .frame(width: thick, height: thick)
-                        .contentShape(Circle())
-                        .onHover { on in
-                            hovered = on ? i : nil
-                            if on, settings.haptics {
-                                NSHapticFeedbackManager.defaultPerformer.perform([.levelChange,.generic,.alignment][settings.hapticStyle], performanceTime: .now)
-                            }
-                        }
-                        .offset(x: cx, y: cy)
-                        .animation(.spring(response: 0.18, dampingFraction: 0.75), value: hovered)
-                        .onTapGesture { onSelect(apps[i]) }
-                }
             }
 
             if arc == nil {

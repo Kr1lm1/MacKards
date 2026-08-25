@@ -14,10 +14,6 @@ final class PieMenuController {
     private var submenuWindow: NSWindow?
     private var visible = false
     private var menuCenter: NSPoint = .zero
-    private var submenuMonitor: Any?
-    private var submenuGlobalMonitor: Any?
-    private var submenuIconRects: [CGRect] = []
-    private var lastSubmenuClick = Date.distantPast
     private var submenuGroupIndex: Int?
     private var apps: [AppItem] = []
     private var mainApps: [AppItem] = []
@@ -74,7 +70,7 @@ final class PieMenuController {
             onGroup: { [weak self] group in
                 guard let self else { return }
                 let idx = self.mainGroups.firstIndex(where: { $0.id == group.id }) ?? 0
-                self.openSubmenu(group: group, at: NSEvent.mouseLocation, totalMain: self.mainApps.count + self.mainActions.count + self.mainGroups.count, groupIndex: idx)
+                self.openSubmenu(group: group, totalMain: self.mainApps.count + self.mainActions.count + self.mainGroups.count, groupIndex: idx)
             },
             onCloseSubmenu: { [weak self] in self?.closeSubmenu() }))
         host.frame = NSRect(origin: .zero, size: frame.size)
@@ -108,7 +104,7 @@ final class PieMenuController {
         hide()
     }
 
-    private func openSubmenu(group: AppGroup, at point: NSPoint, totalMain: Int, groupIndex: Int) {
+    private func openSubmenu(group: AppGroup, totalMain: Int, groupIndex: Int) {
         if submenuWindow != nil, submenuGroupIndex == groupIndex { return }
         if submenuWindow != nil { closeOldSubmenuImmediately() }
         PieMenuState.shared.isSubmenuClosing = false
@@ -121,7 +117,6 @@ final class PieMenuController {
         }
         let n = max(apps.count, 1)
 
-        // Keep the same density (card size + gap) as the main ring
         let mainCard = min((2 * .pi * Double(s.radius)) / Double(max(totalMain, 1)), Double(s.cardSize))
         let gapSub = Double(s.cardGap) / 4.0
         let minRadius = s.radius + s.ringThickness + 4
@@ -135,28 +130,13 @@ final class PieMenuController {
         let side = radius * 2 + CGFloat(cardSub) + 80
         let frame = NSRect(x: menuCenter.x - side/2, y: menuCenter.y - side/2, width: side, height: side)
 
-        var dir = atan2(menuCenter.y - point.y, point.x - menuCenter.x) * 180 / .pi
-        if let screen = NSScreen.main {
-            let half = side/2 + 40
-            let left = menuCenter.x - screen.frame.origin.x
-            let right = screen.frame.maxX - menuCenter.x
-            let bottom = menuCenter.y - screen.frame.origin.y
-            let top = screen.frame.maxY - menuCenter.y
-            if min(left, right, bottom, top) < half {
-                let sx = screen.frame.midX
-                let sy = screen.frame.midY
-                var ideal = atan2(sy - menuCenter.y, sx - menuCenter.x)
-                var diff = (dir * .pi / 180) - ideal
-                while diff > .pi { diff -= 2 * .pi }
-                while diff < -.pi { diff += 2 * .pi }
-                diff = max(-.pi/2, min(.pi/2, diff))
-                dir = (ideal + diff) * 180 / .pi
-            }
-        }
+        let stepDeg = 360.0 / Double(max(totalMain, 1))
+        let startA = -90.0 - stepDeg * Double(max(totalMain, 1) - 1) / 2
+        let dir = startA + stepDeg * Double(mainApps.count + mainActions.count + groupIndex)
         let start = dir - spanDeg / 2
         let arcRange = start...(start + spanDeg)
 
-        let win = NSWindow(contentRect: frame, styleMask: .borderless, backing: .buffered, defer: false)
+                let win = NSWindow(contentRect: frame, styleMask: .borderless, backing: .buffered, defer: false)
         win.level = .floating; win.isOpaque = false; win.backgroundColor = .clear
         win.hasShadow = false; win.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         win.isReleasedWhenClosed = false
@@ -172,68 +152,9 @@ final class PieMenuController {
         self.submenuWindow = win
         win.orderFrontRegardless()
 
-        let nn = Double(apps.count)
-        var rects: [CGRect] = []
-        for i in 0..<apps.count {
-            let aa = (dir - spanDeg/2) + (spanDeg/max(nn, 1)) * Double(i) + (spanDeg/max(nn, 1))/2
-            let rad = aa * .pi/180
-            let icx = menuCenter.x + CGFloat(cos(rad) * Double(radius))
-            let icy = menuCenter.y + CGFloat(sin(rad) * Double(radius))
-            let half = CGFloat(cardSub)/2 + 8
-            rects.append(CGRect(x: icx - half, y: icy - half, width: half*2, height: half*2))
-        }
-        self.submenuIconRects = rects
-
-        submenuMonitor = NSEvent.addLocalMonitorForEvents(matching: .leftMouseDown) { [weak self] e in
-            guard let self else { return e }
-            let pt = NSEvent.mouseLocation
-            if self.submenuIconRects.contains(where: { $0.contains(pt) }) { return e }
-            self.handleSubmenuClick(pt)
-            return nil
-        }
-        submenuGlobalMonitor = NSEvent.addGlobalMonitorForEvents(matching: .leftMouseDown) { [weak self] _ in
-            guard let self else { return }
-            let pt = NSEvent.mouseLocation
-            if self.submenuIconRects.contains(where: { $0.contains(pt) }) { return }
-            self.handleSubmenuClick(pt)
-        }
-    }
-
-    private func groupIndexAt(_ pt: NSPoint) -> Int? {
-        let s = AppSettings.shared
-        let totalMain = mainApps.count + mainActions.count + mainGroups.count
-        guard totalMain > 0 else { return nil }
-        for j in 0..<mainGroups.count {
-            let i = mainApps.count + mainActions.count + j
-            let step = 360.0 / Double(totalMain)
-            let startA = -90.0 - step * Double(totalMain - 1) / 2
-            let ang = (startA + step * Double(i)) * .pi / 180
-            let cardMain = min((2 * CGFloat.pi * s.radius) / CGFloat(totalMain), CGFloat(s.cardSize))
-            let px = menuCenter.x + CGFloat(cos(ang)) * s.radius
-            let py = menuCenter.y + CGFloat(sin(ang)) * s.radius
-            let r = CGRect(x: px - cardMain/2, y: py - cardMain/2, width: cardMain, height: cardMain)
-            if r.contains(pt) { return j }
-        }
-        return nil
-    }
-
-    private func handleSubmenuClick(_ pt: NSPoint) {
-        let now = Date()
-        guard now.timeIntervalSince(lastSubmenuClick) > 0.15 else { return }
-        lastSubmenuClick = now
-        if submenuIconRects.contains(where: { $0.contains(pt) }) { return }
-        if let g = groupIndexAt(pt) {
-            if g == submenuGroupIndex { closeSubmenu() }
-            else { openSubmenu(group: mainGroups[g], at: pt, totalMain: mainApps.count + mainActions.count + mainGroups.count, groupIndex: g) }
-            return
-        }
-        closeSubmenu()
     }
 
     private func closeOldSubmenuImmediately() {
-        if let m = submenuMonitor { NSEvent.removeMonitor(m); submenuMonitor = nil }
-        if let m = submenuGlobalMonitor { NSEvent.removeMonitor(m); submenuGlobalMonitor = nil }
-        submenuIconRects = []
         submenuGroupIndex = nil
         PieMenuState.shared.isSubmenuClosing = false
         guard let win = submenuWindow else { return }
@@ -242,9 +163,6 @@ final class PieMenuController {
     }
 
     private func closeSubmenu() {
-        if let m = submenuMonitor { NSEvent.removeMonitor(m); submenuMonitor = nil }
-        if let m = submenuGlobalMonitor { NSEvent.removeMonitor(m); submenuGlobalMonitor = nil }
-        submenuIconRects = []
         submenuGroupIndex = nil
         guard let win = submenuWindow else { return }
         PieMenuState.shared.isSubmenuClosing = true
