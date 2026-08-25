@@ -262,7 +262,10 @@ struct SettingsView: View {
                             } label: {
                                 HStack(spacing: 6) {
                                     Image(systemName: "square.grid.2x2.fill").font(.system(size: 11)).foregroundColor(.accentColor)
-                                    Text(group.name).font(.system(size: 11, weight: .medium)).lineLimit(1)
+                                    TextField("Group name", text: $settings.pinnedGroups[idx].name)
+                                        .font(.system(size: 11, weight: .medium))
+                                        .lineLimit(1)
+                                        .textFieldStyle(.plain)
                                     Spacer()
                                     Button { settings.pinnedGroups.remove(at: idx) } label: {
                                         Image(systemName: "xmark.circle.fill").font(.system(size: 10)).foregroundColor(.secondary.opacity(0.5))

@@ -122,7 +122,7 @@ final class PieMenuController {
 
         // Keep the same density (card size + gap) as the main ring
         let mainCard = min((2 * .pi * Double(s.radius)) / Double(max(totalMain, 1)), Double(s.cardSize))
-        let gapSub = Double(s.cardGap) / 16.0
+        let gapSub = Double(s.cardGap) / 4.0
         let minRadius = s.radius + s.ringThickness + 6
         let gapAng = gapSub / Double(minRadius) * 180 / .pi
         let iconAng = mainCard / Double(minRadius) * 180 / .pi

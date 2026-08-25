@@ -86,10 +86,10 @@ struct PieMenuContentView: View {
             } else if let arcRange = arc {
                 ZStack {
                     ArcShape(radius: radius, thickness: thick, start: arcRange.lowerBound, end: arcRange.upperBound)
-                        .stroke(outline, style: StrokeStyle(lineWidth: 1.5, lineCap: .butt))
+                        .stroke(outline, style: StrokeStyle(lineWidth: thick + 3, lineCap: .butt))
                         .frame(width: size, height: size)
                     ArcShape(radius: radius, thickness: thick, start: arcRange.lowerBound, end: arcRange.upperBound)
-                        .stroke(lp ? AnyShapeStyle(lpColor) : AnyShapeStyle(settings.menuMaterial), style: StrokeStyle(lineWidth: thick - 3, lineCap: .butt))
+                        .stroke(lp ? AnyShapeStyle(lpColor) : AnyShapeStyle(settings.menuMaterial), style: StrokeStyle(lineWidth: thick, lineCap: .butt))
                         .frame(width: size, height: size)
                 }
                 .scaleEffect(ringVis && !subClosing ? 1 : 0.55)
@@ -181,7 +181,6 @@ struct PieMenuContentView: View {
         .onTapGesture {
             if i < apps.count { onSelect(apps[i]) }
             else if i < apps.count + actions.count { onAction(actions[i - apps.count]) }
-            else { onGroup(groups[i - apps.count - actions.count]) }
         }
         .onHover { on in
             let prev = hovered; hovered = on ? i : nil
@@ -189,7 +188,13 @@ struct PieMenuContentView: View {
             if on {
                 if i < apps.count { st.hoveredApp = apps[i]; st.hoveredAction = nil }
                 else if i < apps.count + actions.count { st.hoveredApp = nil; st.hoveredAction = actions[i - apps.count] }
-                else { st.hoveredApp = nil; st.hoveredAction = nil }
+                else {
+                    st.hoveredApp = nil; st.hoveredAction = nil
+                    if arc == nil {
+                        let g = i - apps.count - actions.count
+                        if g < groups.count { onGroup(groups[g]) }
+                    }
+                }
                 if prev != i && settings.haptics {
                     NSHapticFeedbackManager.defaultPerformer.perform([.levelChange,.generic,.alignment][settings.hapticStyle], performanceTime: .now)
                 }
