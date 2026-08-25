@@ -9,7 +9,7 @@ struct AnimatedScrollIndicator: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .scrollIndicators(.hidden)
+            .scrollIndicators(.hidden, axes: .vertical)
             .onScrollGeometryChange(for: ScrollGeometry.self, of: { $0 }) { _, new in
                 geo = new
                 withAnimation(.easeInOut(duration: 0.15)) { show = true }
