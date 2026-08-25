@@ -94,9 +94,12 @@ struct PieMenuContentView: View {
             } else if let arcRange = arc {
                 let bgRange = bgArc ?? arcRange
                 let bgThick = max(26, thick * 0.85)
+                let outerR = radius + bgThick / 2
+                let innerR = max(radius - bgThick / 2, 0)
                 ZStack {
-                    ArcShape(radius: radius, thickness: bgThick, start: bgRange.lowerBound, end: bgRange.upperBound)
-                        .stroke(lp ? AnyShapeStyle(lpColor) : AnyShapeStyle(settings.menuMaterial), style: StrokeStyle(lineWidth: bgThick, lineCap: .butt))
+                    ArcSegmentShape(outerRadius: outerR, innerRadius: innerR, start: bgRange.lowerBound, end: bgRange.upperBound)
+                        .fill(lp ? AnyShapeStyle(lpColor) : AnyShapeStyle(settings.menuMaterial))
+                        .overlay(ArcSegmentShape(outerRadius: outerR, innerRadius: innerR, start: bgRange.lowerBound, end: bgRange.upperBound).stroke(outline, lineWidth: 1.5))
                         .frame(width: size, height: size)
                     let n = Double(max(apps.count, 1))
                     let iconAng = card / radius * 180 / .pi
@@ -286,6 +289,18 @@ struct ArcShape: Shape {
         let c = CGPoint(x: rect.midX, y: rect.midY)
         var p = Path()
         p.addArc(center: c, radius: radius, startAngle: .radians(start * .pi / 180), endAngle: .radians(end * .pi / 180), clockwise: false)
+        return p
+    }
+}
+
+struct ArcSegmentShape: Shape {
+    let outerRadius: CGFloat, innerRadius: CGFloat, start: Double, end: Double
+    func path(in rect: CGRect) -> Path {
+        let c = CGPoint(x: rect.midX, y: rect.midY)
+        var p = Path()
+        p.addArc(center: c, radius: outerRadius, startAngle: .radians(start * .pi / 180), endAngle: .radians(end * .pi / 180), clockwise: false)
+        p.addArc(center: c, radius: innerRadius, startAngle: .radians(end * .pi / 180), endAngle: .radians(start * .pi / 180), clockwise: true)
+        p.closeSubpath()
         return p
     }
 }
