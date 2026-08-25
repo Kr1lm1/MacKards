@@ -114,8 +114,10 @@ struct PieMenuContentView: View {
                             .onHover { on in
                                 hovered = on ? i : nil
                                 if on, settings.haptics {
-                                    NSHapticFeedbackManager.defaultPerformer.perform([.levelChange,.generic,.alignment][settings.hapticStyle], performanceTime: .now)
-                                }
+                    let styles: [NSHapticFeedbackManager.FeedbackPattern] = [.levelChange, .generic, .alignment]
+                    let style = styles[min(max(settings.hapticStyle, 0), styles.count - 1)]
+                    NSHapticFeedbackManager.defaultPerformer.perform(style, performanceTime: .now)
+                }
                             }
                             .offset(x: cx, y: cy)
                             .animation(.spring(response: 0.18, dampingFraction: 0.75), value: hovered)
@@ -193,7 +195,9 @@ struct PieMenuContentView: View {
                     }
                 }
                 if prev != i && settings.haptics {
-                    NSHapticFeedbackManager.defaultPerformer.perform([.levelChange,.generic,.alignment][settings.hapticStyle], performanceTime: .now)
+                    let styles: [NSHapticFeedbackManager.FeedbackPattern] = [.levelChange, .generic, .alignment]
+                    let style = styles[min(max(settings.hapticStyle, 0), styles.count - 1)]
+                    NSHapticFeedbackManager.defaultPerformer.perform(style, performanceTime: .now)
                 }
             } else { st.hoveredApp = nil; st.hoveredAction = nil }
         }

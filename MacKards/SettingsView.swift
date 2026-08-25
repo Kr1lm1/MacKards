@@ -5,8 +5,26 @@ import UniformTypeIdentifiers
 struct ScrollViewHider: NSViewRepresentable {
     func makeNSView(context: Context) -> NSView { NSView() }
     func updateNSView(_ nsView: NSView, context: Context) {
-        nsView.enclosingScrollView?.hasVerticalScroller = false
-        nsView.enclosingScrollView?.hasHorizontalScroller = false
+        hide(in: nsView)
+        DispatchQueue.main.async { hide(in: nsView) }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { hide(in: nsView) }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { hide(in: nsView) }
+    }
+    private func hide(in view: NSView) {
+        var scrollView = view.enclosingScrollView
+        if scrollView == nil {
+            var cur: NSView? = view.superview
+            while let v = cur {
+                if let sv = v as? NSScrollView { scrollView = sv; break }
+                cur = v.superview
+            }
+        }
+        guard let sv = scrollView else { return }
+        sv.hasVerticalScroller = false
+        sv.hasHorizontalScroller = false
+        sv.autohidesScrollers = true
+        sv.verticalScroller?.isHidden = true
+        sv.horizontalScroller?.isHidden = true
     }
 }
 

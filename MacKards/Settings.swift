@@ -52,7 +52,7 @@ final class AppSettings: ObservableObject {
         showLabels = d.object(forKey: "sl") == nil ? true : d.bool(forKey: "sl")
         showActions = d.object(forKey: "sa") == nil ? true : d.bool(forKey: "sa")
         haptics = d.object(forKey: "hp") == nil ? true : d.bool(forKey: "hp")
-        hapticStyle = d.object(forKey: "hps") == nil ? 1 : d.integer(forKey: "hps")
+        hapticStyle = min(max(d.object(forKey: "hps") == nil ? 1 : d.integer(forKey: "hps"), 0), 2)
         lowPower = d.bool(forKey: "lp")
         var savedAnim = d.object(forKey: "oa") == nil ? 0 : d.integer(forKey: "oa")
         if savedAnim == 1 { savedAnim = 0 }      // removed scale -> stagger
@@ -60,8 +60,8 @@ final class AppSettings: ObservableObject {
         else if savedAnim == 3 { savedAnim = 1 } // old bounce -> bounce
         openAnim = min(savedAnim, 1)
         launchAtLogin = d.bool(forKey: "lal")
-        hotkeyMod1 = d.object(forKey: "hm1") == nil ? 0 : d.integer(forKey: "hm1")
-        hotkeyMod2 = d.object(forKey: "hm2") == nil ? 2 : d.integer(forKey: "hm2")
+        hotkeyMod1 = min(max(d.object(forKey: "hm1") == nil ? 0 : d.integer(forKey: "hm1"), 0), 3)
+        hotkeyMod2 = min(max(d.object(forKey: "hm2") == nil ? 2 : d.integer(forKey: "hm2"), 0), 3)
         enabledActions = d.stringArray(forKey: "ea") ?? ["downloads","documents","desktop","trash"]
         pinnedAppPaths = d.stringArray(forKey: "pa") ?? Self.defaultApps()
         pinnedFolderPaths = d.stringArray(forKey: "pf") ?? []
