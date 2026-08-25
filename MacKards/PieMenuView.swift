@@ -93,14 +93,23 @@ struct PieMenuContentView: View {
                     .animation(lp ? nil : .easeIn(duration: 0.1), value: closing)
             } else if let arcRange = arc {
                 let bgRange = bgArc ?? arcRange
+                let bgThick = max(26, thick * 0.85)
+                let capR: CGFloat = 5
                 ZStack {
-                    let bgThick = max(14, thick * 0.4)
                     ArcShape(radius: radius, thickness: bgThick, start: bgRange.lowerBound, end: bgRange.upperBound)
-                        .stroke(outline, style: StrokeStyle(lineWidth: bgThick + 2, lineCap: .round))
+                        .stroke(outline, style: StrokeStyle(lineWidth: bgThick + 3, lineCap: .butt))
                         .frame(width: size, height: size)
                     ArcShape(radius: radius, thickness: bgThick, start: bgRange.lowerBound, end: bgRange.upperBound)
-                        .stroke(lp ? AnyShapeStyle(lpColor) : AnyShapeStyle(settings.menuMaterial), style: StrokeStyle(lineWidth: bgThick, lineCap: .round))
+                        .stroke(lp ? AnyShapeStyle(lpColor) : AnyShapeStyle(settings.menuMaterial), style: StrokeStyle(lineWidth: bgThick, lineCap: .butt))
                         .frame(width: size, height: size)
+                    let ends = [bgRange.lowerBound, bgRange.upperBound]
+                    ForEach(0..<ends.count, id: \.self) { idx in
+                        let rad = ends[idx] * .pi / 180
+                        let x = cos(rad) * radius
+                        let y = sin(rad) * radius
+                        Circle().fill(outline).frame(width: capR * 2 + 3, height: capR * 2 + 3).offset(x: x, y: y)
+                        Circle().fill(lp ? AnyShapeStyle(lpColor) : AnyShapeStyle(settings.menuMaterial)).frame(width: capR * 2, height: capR * 2).offset(x: x, y: y)
+                    }
                     let n = Double(max(apps.count, 1))
                     let iconAng = card / radius * 180 / .pi
                     let span = arcRange.upperBound - arcRange.lowerBound
