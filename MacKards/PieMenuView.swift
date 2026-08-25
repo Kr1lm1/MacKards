@@ -103,7 +103,7 @@ struct PieMenuContentView: View {
                         let span = arcRange.upperBound - arcRange.lowerBound
                         let n = Double(max(apps.count, 1))
                         let iconAng = card / radius * 180 / .pi
-                        let gapAng = max(2.0, (span - n * iconAng) / (n + 1))
+                        let gapAng = max(0.1, (span - n * iconAng) / (n + 1))
                         let ang = arcRange.lowerBound + gapAng + Double(i) * (iconAng + gapAng)
                         let rad = ang * .pi / 180
                         let jump = (hovered == i && !lp) ? 6.0 : 0.0
