@@ -32,7 +32,11 @@ struct SettingsView: View {
                 case 1: appsTab
                 default: aboutTab
                 }
-            }.frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+            .id(tab)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .transition(.move(edge: .trailing).combined(with: .opacity))
+            .animation(.easeInOut(duration: 0.22), value: tab)
         }
         .frame(width: 520, height: 560)
         .onAppear { AppFinder.shared.getApps { apps = $0 } }
@@ -220,6 +224,7 @@ struct SettingsView: View {
                     }.padding(.vertical, 2).contentShape(Rectangle())
                 }
                 .onMove { from, to in settings.pinnedAppPaths.move(fromOffsets: from, toOffset: to) }
+                .transition(.move(edge: .leading).combined(with: .opacity))
             } header: {
                 Text("Pinned Apps").font(.system(size: 13, weight: .semibold))
             } footer: {
@@ -277,6 +282,7 @@ struct SettingsView: View {
                                 }.buttonStyle(.plain)
                             }
                         }
+                        .transition(.move(edge: .leading).combined(with: .opacity))
                     }
                     Button {
                         settings.pinnedGroups.append(AppGroup(name: "New Group", paths: []))
