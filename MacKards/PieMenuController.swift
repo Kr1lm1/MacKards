@@ -244,13 +244,10 @@ final class PieMenuController {
         if let m = submenuGlobalMonitor { NSEvent.removeMonitor(m); submenuGlobalMonitor = nil }
         submenuIconRects = []
         submenuGroupIndex = nil
+        PieMenuState.shared.isSubmenuClosing = false
         guard let win = submenuWindow else { return }
         submenuWindow = nil
-        PieMenuState.shared.isSubmenuClosing = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.16) {
-            win.orderOut(nil)
-            PieMenuState.shared.isSubmenuClosing = false
-        }
+        win.orderOut(nil)
     }
 
     private func cachedIcon(for path: String) -> NSImage {

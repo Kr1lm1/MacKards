@@ -38,6 +38,10 @@ struct PieMenuContentView: View {
     
     private func animateIn() {
         let n = total, lp = settings.lowPower, spd = settings.animSpeed
+        if arc != nil {
+            shown = n; ringVis = true; menuScale = 1; menuOpacity = 1
+            return
+        }
         if lp {
             shown = n; ringVis = true; menuScale = 1; menuOpacity = 1
             return
@@ -69,7 +73,6 @@ struct PieMenuContentView: View {
         let ring = settings.menuStyle == 1 && arc == nil
         let thick = settings.ringThickness
         let closing = state.isClosing
-        let subClosing = state.isSubmenuClosing
         let outline = Color.primary.opacity(0.125)
 
         return ZStack {
@@ -84,6 +87,8 @@ struct PieMenuContentView: View {
                     .animation(lp ? nil : .spring(response: 0.2, dampingFraction: 0.75), value: ringVis)
                     .animation(lp ? nil : .easeIn(duration: 0.1), value: closing)
             } else if let arcRange = arc {
+                let mid = (arcRange.lowerBound + arcRange.upperBound) / 2
+                let innerR = radius - thick/2
                 ZStack {
                     ArcShape(radius: radius, thickness: thick, start: arcRange.lowerBound, end: arcRange.upperBound)
                         .stroke(outline, style: StrokeStyle(lineWidth: thick + 3, lineCap: .butt))
@@ -91,11 +96,13 @@ struct PieMenuContentView: View {
                     ArcShape(radius: radius, thickness: thick, start: arcRange.lowerBound, end: arcRange.upperBound)
                         .stroke(lp ? AnyShapeStyle(lpColor) : AnyShapeStyle(settings.menuMaterial), style: StrokeStyle(lineWidth: thick, lineCap: .butt))
                         .frame(width: size, height: size)
+                    TrianglePointerShape(angle: mid, innerRadius: innerR, length: 14, baseAngle: 10 * .pi / 180)
+                        .fill(outline)
+                        .frame(width: size, height: size)
+                    TrianglePointerShape(angle: mid, innerRadius: innerR, length: 14, baseAngle: 10 * .pi / 180)
+                        .fill(lp ? AnyShapeStyle(lpColor) : AnyShapeStyle(settings.menuMaterial))
+                        .frame(width: size, height: size)
                 }
-                .scaleEffect(ringVis && !subClosing ? 1 : 0.55)
-                .opacity(ringVis && !subClosing ? 1 : 0)
-                .animation(lp ? nil : .spring(response: 0.2, dampingFraction: 0.75), value: ringVis)
-                .animation(lp ? nil : .easeIn(duration: 0.14), value: subClosing)
 
                 ForEach(0..<apps.count, id: \.self) { i in
                     let span = arcRange.upperBound - arcRange.lowerBound
@@ -104,15 +111,10 @@ struct PieMenuContentView: View {
                     let gapAng = max(2.0, (span - n * iconAng) / (n + 1))
                     let ang = arcRange.lowerBound + gapAng + Double(i) * (iconAng + gapAng)
                     let rad = ang * .pi / 180
-                    let atPos = i < shown
-                    let vis = atPos && !subClosing
                     let jump = (hovered == i && !lp) ? 6.0 : 0.0
                     let rr = radius + jump
                     let cx = cos(rad) * rr
                     let cy = sin(rad) * rr
-                    let mid = (arcRange.lowerBound + arcRange.upperBound) / 2 * .pi / 180
-                    let ox = cos(mid) * radius
-                    let oy = sin(mid) * radius
                     cardIcon(i, card)
                         .frame(width: thick, height: thick)
                         .contentShape(Circle())
@@ -122,11 +124,8 @@ struct PieMenuContentView: View {
                                 NSHapticFeedbackManager.defaultPerformer.perform([.levelChange,.generic,.alignment][settings.hapticStyle], performanceTime: .now)
                             }
                         }
-                        .offset(x: atPos ? cx : ox, y: atPos ? cy : oy)
-                        .scaleEffect(vis ? 1 : 0.01)
-                        .opacity(vis ? 1 : 0)
+                        .offset(x: cx, y: cy)
                         .animation(.spring(response: 0.18, dampingFraction: 0.75), value: hovered)
-                        .animation(.spring(response: 0.16, dampingFraction: 0.8), value: vis)
                         .onTapGesture { onSelect(apps[i]) }
                 }
             }
@@ -278,6 +277,23 @@ struct ArcShape: Shape {
         let c = CGPoint(x: rect.midX, y: rect.midY)
         var p = Path()
         p.addArc(center: c, radius: radius, startAngle: .radians(start * .pi / 180), endAngle: .radians(end * .pi / 180), clockwise: false)
+        return p
+    }
+}
+
+struct TrianglePointerShape: Shape {
+    let angle: Double, innerRadius: CGFloat, length: CGFloat, baseAngle: Double
+    func path(in rect: CGRect) -> Path {
+        let c = CGPoint(x: rect.midX, y: rect.midY)
+        let a = angle * .pi / 180
+        let tip = CGPoint(x: c.x + cos(a) * (innerRadius - length), y: c.y + sin(a) * (innerRadius - length))
+        let b1 = CGPoint(x: c.x + cos(a - baseAngle) * innerRadius, y: c.y + sin(a - baseAngle) * innerRadius)
+        let b2 = CGPoint(x: c.x + cos(a + baseAngle) * innerRadius, y: c.y + sin(a + baseAngle) * innerRadius)
+        var p = Path()
+        p.move(to: tip)
+        p.addLine(to: b1)
+        p.addLine(to: b2)
+        p.closeSubpath()
         return p
     }
 }
