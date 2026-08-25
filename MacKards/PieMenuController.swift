@@ -154,10 +154,11 @@ final class PieMenuController {
         host.frame = NSRect(origin: .zero, size: frame.size)
 
         if wasOpen, let win = submenuWindow {
-            win.contentView = host
             NSAnimationContext.runAnimationGroup({ ctx in
                 ctx.duration = 0.18
                 win.animator().setFrame(frame, display: true)
+            }, completionHandler: {
+                win.contentView = host
             })
         } else {
             let win = NSWindow(contentRect: frame, styleMask: .borderless, backing: .buffered, defer: false)
