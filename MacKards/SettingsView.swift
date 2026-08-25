@@ -2,6 +2,47 @@ import SwiftUI
 import AppKit
 import UniformTypeIdentifiers
 
+struct AnimatedScrollIndicator: ViewModifier {
+    @State private var geo: ScrollGeometry?
+    @State private var show = false
+    @State private var hideTask: Task<Void, Never>?
+
+    func body(content: Content) -> some View {
+        content
+            .scrollIndicators(.hidden)
+            .onScrollGeometryChange(for: ScrollGeometry.self, of: { $0 }) { _, new in
+                geo = new
+                withAnimation(.easeInOut(duration: 0.15)) { show = true }
+                hideTask?.cancel()
+                hideTask = Task {
+                    try? await Task.sleep(for: .seconds(1.0))
+                    await MainActor.run {
+                        withAnimation(.easeInOut(duration: 0.3)) { show = false }
+                    }
+                }
+            }
+            .overlay(alignment: .trailing) {
+                if let geo, geo.contentSize.height > geo.containerSize.height + 1 {
+                    GeometryReader { proxy in
+                        let trackH = proxy.size.height
+                        let ratio = geo.containerSize.height / geo.contentSize.height
+                        let thumbH = max(24, trackH * ratio)
+                        let maxOffset = max(1, geo.contentSize.height - geo.containerSize.height)
+                        let progress = min(max(geo.contentOffset.y / maxOffset, 0), 1)
+                        let thumbOffset = progress * (trackH - thumbH)
+
+                        RoundedRectangle(cornerRadius: thumbH / 2)
+                            .fill(Color.primary.opacity(0.4))
+                            .frame(width: 5, height: thumbH)
+                            .position(x: proxy.size.width - 5, y: thumbOffset + thumbH / 2)
+                            .opacity(show ? 1 : 0)
+                            .animation(.easeInOut(duration: 0.2), value: show)
+                    }
+                }
+            }
+    }
+}
+
 struct SettingsView: View {
     @ObservedObject var settings = AppSettings.shared
     @State private var apps: [AppItem] = []
@@ -192,6 +233,7 @@ struct SettingsView: View {
                 .frame(maxWidth: .infinity, alignment: .trailing)
             }.padding(18)
         }
+        .modifier(AnimatedScrollIndicator())
     }
 
     private func pickApp(into index: Int) {
@@ -304,6 +346,7 @@ struct SettingsView: View {
         .padding(.horizontal, 2)
         .animation(.easeInOut(duration: 0.2), value: settings.pinnedAppPaths.count)
         .animation(.easeInOut(duration: 0.2), value: settings.pinnedGroups.count)
+        .modifier(AnimatedScrollIndicator())
     }
     
     // MARK: - About
