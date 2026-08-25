@@ -121,9 +121,9 @@ final class PieMenuController {
         let midGapAng = gapSub / Double(minRadius) * 180 / .pi
         let iconAng = mainCard / Double(minRadius) * 180 / .pi
         let cardSub = mainCard
-        let edgePadAng = 5.0
+        let edgePadAng = 2.5
         let iconSpanDeg = max(30.0, 2 * edgePadAng + max(0.0, Double(n - 1)) * midGapAng + Double(n) * iconAng)
-        let bgPadAng = 2.5
+        let bgPadAng = 1.25
         let bgSpanDeg = min(260.0, iconSpanDeg + 2 * bgPadAng)
         let radius = minRadius
 
