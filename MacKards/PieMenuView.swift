@@ -71,7 +71,7 @@ struct PieMenuContentView: View {
         let baseR = settings.radius
         let circ = 2 * .pi * baseR
         let card = cardSizeOverride ?? min((circ - settings.cardGap * n) / n, settings.cardSize)
-        let size = radius * 2 + card + 120
+        let size = radius * 2 + card + 60
         let ring = settings.menuStyle == 1 && arc == nil
         let thick = settings.ringThickness
         let closing = state.isClosing
@@ -100,16 +100,16 @@ struct PieMenuContentView: View {
                     ForEach(0..<apps.count, id: \.self) { i in
                         let span = arcRange.upperBound - arcRange.lowerBound
                         let n = Double(max(apps.count, 1))
-                        let halfAng = asin(min(1.0, card / (2 * radius))) * 180 / .pi
-                        let gapAng = max(1.0, (span - 2 * n * halfAng) / (n + 1))
-                        let ang = arcRange.lowerBound + gapAng + halfAng + Double(i) * (2 * halfAng + gapAng)
+                        let iconAng = card / radius * 180 / .pi
+                        let gapAng = max(2.0, (span - n * iconAng) / (n + 1))
+                        let ang = arcRange.lowerBound + gapAng + Double(i) * (iconAng + gapAng)
                         let rad = ang * .pi / 180
                         let jump = (hovered == i && !lp) ? 6.0 : 0.0
                         let rr = radius + jump
                         let cx = cos(rad) * rr
                         let cy = sin(rad) * rr
                         cardIcon(i, card)
-                            .frame(width: thick, height: thick)
+                            .frame(width: card, height: card)
                             .contentShape(Circle())
                             .onHover { on in
                                 hovered = on ? i : nil
