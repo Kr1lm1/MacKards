@@ -43,7 +43,6 @@ struct SettingsView: View {
         .offset(x: appeared ? 0 : 24)
         .animation(.easeOut(duration: 0.28), value: appeared)
         .onAppear { appeared = true }
-    }
         .frame(width: 520, height: 560)
         .onAppear { AppFinder.shared.getApps { apps = $0 } }
     }
