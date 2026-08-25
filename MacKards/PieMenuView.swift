@@ -91,7 +91,7 @@ struct PieMenuContentView: View {
                     .animation(lp ? nil : .easeIn(duration: 0.1), value: closing)
             } else if let arcRange = arc {
                 let bgRange = bgArc ?? arcRange
-                let bgThick = max(18, thick * 0.65)
+                let bgThick = max(26, thick * 0.85)
                 ZStack {
                     ArcShape(radius: radius, thickness: bgThick, start: bgRange.lowerBound, end: bgRange.upperBound)
                         .stroke(outline, style: StrokeStyle(lineWidth: bgThick + 3, lineCap: .butt))

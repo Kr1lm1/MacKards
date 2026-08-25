@@ -133,7 +133,7 @@ final class PieMenuController {
         let dir = -90.0 + stepDeg * Double(mainApps.count + mainActions.count + groupIndex) + stepDeg / 2
         let iconStart = dir - iconSpanDeg / 2
         let iconArc = iconStart...(iconStart + iconSpanDeg)
-        let bgStart = iconStart - 35.0
+        let bgStart = iconStart - 25.0
         let bgArc = bgStart...(bgStart + bgSpanDeg)
 
         let win = NSWindow(contentRect: frame, styleMask: .borderless, backing: .buffered, defer: false)
