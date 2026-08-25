@@ -13,6 +13,7 @@ struct PieMenuContentView: View {
     let onGroup: (AppGroup) -> Void
     let onCloseSubmenu: () -> Void
     var arc: ClosedRange<Double>? = nil
+    var bgArc: ClosedRange<Double>? = nil
     var radiusOverride: CGFloat? = nil
     var cardSizeOverride: CGFloat? = nil
     
@@ -89,11 +90,12 @@ struct PieMenuContentView: View {
                     .animation(lp ? nil : .spring(response: 0.2, dampingFraction: 0.75), value: ringVis)
                     .animation(lp ? nil : .easeIn(duration: 0.1), value: closing)
             } else if let arcRange = arc {
+                let bgRange = bgArc ?? arcRange
                 ZStack {
-                    ArcShape(radius: radius, thickness: thick, start: arcRange.lowerBound, end: arcRange.upperBound)
+                    ArcShape(radius: radius, thickness: thick, start: bgRange.lowerBound, end: bgRange.upperBound)
                         .stroke(outline, style: StrokeStyle(lineWidth: thick + 3, lineCap: .butt))
                         .frame(width: size, height: size)
-                    ArcShape(radius: radius, thickness: thick, start: arcRange.lowerBound, end: arcRange.upperBound)
+                    ArcShape(radius: radius, thickness: thick, start: bgRange.lowerBound, end: bgRange.upperBound)
                         .stroke(lp ? AnyShapeStyle(lpColor) : AnyShapeStyle(settings.menuMaterial), style: StrokeStyle(lineWidth: thick, lineCap: .butt))
                         .frame(width: size, height: size)
                     ForEach(0..<apps.count, id: \.self) { i in

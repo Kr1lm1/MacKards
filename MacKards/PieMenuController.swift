@@ -120,8 +120,9 @@ final class PieMenuController {
         let minRadius = s.radius + s.ringThickness + 8
         let gapAng = gapSub / Double(minRadius) * 180 / .pi
         let iconAng = mainCard / Double(minRadius) * 180 / .pi
-        let spanDeg = max(40.0, min(240.0, Double(n + 1) * gapAng + Double(n) * iconAng + 30.0))
-        let arcLenAvailable = 2 * .pi * Double(minRadius) * (spanDeg / 360.0)
+        let iconSpanDeg = max(30.0, min(200.0, Double(n + 1) * gapAng + Double(n) * iconAng + 30.0))
+        let bgSpanDeg = min(260.0, iconSpanDeg + 40.0)
+        let arcLenAvailable = 2 * .pi * Double(minRadius) * (iconSpanDeg / 360.0)
         let cardSub = max(24.0, min(mainCard, (arcLenAvailable - Double(n + 1) * gapSub) / Double(n)))
         let radius = minRadius
 
@@ -129,11 +130,13 @@ final class PieMenuController {
         let frame = NSRect(x: menuCenter.x - side/2, y: menuCenter.y - side/2, width: side, height: side)
 
         let stepDeg = 360.0 / Double(max(totalMain, 1))
-        let dir = -90.0 + stepDeg * Double(mainApps.count + mainActions.count + groupIndex) + stepDeg / 2 - 20.0
-        let start = dir - spanDeg / 2
-        let arcRange = start...(start + spanDeg)
+        let dir = -90.0 + stepDeg * Double(mainApps.count + mainActions.count + groupIndex) + stepDeg / 2
+        let iconStart = dir - iconSpanDeg / 2
+        let iconArc = iconStart...(iconStart + iconSpanDeg)
+        let bgStart = iconStart - 20.0
+        let bgArc = bgStart...(bgStart + bgSpanDeg)
 
-                let win = NSWindow(contentRect: frame, styleMask: .borderless, backing: .buffered, defer: false)
+        let win = NSWindow(contentRect: frame, styleMask: .borderless, backing: .buffered, defer: false)
         win.level = .floating; win.isOpaque = false; win.backgroundColor = .clear
         win.hasShadow = false; win.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         win.isReleasedWhenClosed = false
@@ -143,7 +146,7 @@ final class PieMenuController {
             onSelect: { [weak self] app in self?.launchAndClose(app) },
             onAction: { _ in }, onGroup: { _ in },
             onCloseSubmenu: {},
-            arc: arcRange, radiusOverride: radius, cardSizeOverride: CGFloat(cardSub)))
+            arc: iconArc, bgArc: bgArc, radiusOverride: radius, cardSizeOverride: CGFloat(cardSub)))
         host.frame = NSRect(origin: .zero, size: frame.size)
         win.contentView = host
         self.submenuWindow = win
