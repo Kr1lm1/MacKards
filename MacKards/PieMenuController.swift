@@ -120,8 +120,8 @@ final class PieMenuController {
         let minRadius = s.radius + s.ringThickness + 8
         let gapAng = gapSub / Double(minRadius) * 180 / .pi
         let iconAng = mainCard / Double(minRadius) * 180 / .pi
-        let iconSpanDeg = max(30.0, min(160.0, Double(n + 1) * gapAng + Double(n) * iconAng + 5.0))
-        let bgSpanDeg = min(200.0, iconSpanDeg + 5.0)
+        let iconSpanDeg = max(30.0, min(110.0, Double(n + 1) * gapAng + Double(n) * iconAng))
+        let bgSpanDeg = min(180.0, iconSpanDeg + 10.0)
         let arcLenAvailable = 2 * .pi * Double(minRadius) * (iconSpanDeg / 360.0)
         let cardSub = max(24.0, min(mainCard, (arcLenAvailable - Double(n + 1) * gapSub) / Double(n)))
         let radius = minRadius
