@@ -2,6 +2,14 @@ import SwiftUI
 import AppKit
 import UniformTypeIdentifiers
 
+struct ScrollViewHider: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSView { NSView() }
+    func updateNSView(_ nsView: NSView, context: Context) {
+        nsView.enclosingScrollView?.hasVerticalScroller = false
+        nsView.enclosingScrollView?.hasHorizontalScroller = false
+    }
+}
+
 struct AnimatedScrollIndicator: ViewModifier {
     @State private var geo: ScrollGeometry?
     @State private var show = false
@@ -10,6 +18,7 @@ struct AnimatedScrollIndicator: ViewModifier {
     func body(content: Content) -> some View {
         content
             .scrollIndicators(.hidden, axes: .vertical)
+            .background(ScrollViewHider())
             .onScrollGeometryChange(for: ScrollGeometry.self, of: { $0 }) { _, new in
                 geo = new
                 withAnimation(.easeInOut(duration: 0.15)) { show = true }
