@@ -118,12 +118,13 @@ final class PieMenuController {
         let mainCard = min((2 * .pi * Double(s.radius)) / Double(max(totalMain, 1)), Double(s.cardSize))
         let gapSub = 2.0
         let minRadius = s.radius + s.ringThickness + 12
-        let gapAng = gapSub / Double(minRadius) * 180 / .pi
+        let midGapAng = gapSub / Double(minRadius) * 180 / .pi
         let iconAng = mainCard / Double(minRadius) * 180 / .pi
         let cardSub = mainCard
         let edgePadAng = 5.0
-        let iconSpanDeg = max(30.0, 2 * edgePadAng + max(0.0, Double(n - 1)) * gapAng + Double(n) * iconAng)
-        let bgSpanDeg = min(220.0, iconSpanDeg + 5.0)
+        let iconSpanDeg = max(30.0, 2 * edgePadAng + max(0.0, Double(n - 1)) * midGapAng + Double(n) * iconAng)
+        let bgPadAng = 2.5
+        let bgSpanDeg = min(260.0, iconSpanDeg + 2 * bgPadAng)
         let radius = minRadius
 
         let side = radius * 2 + CGFloat(cardSub) + 80
@@ -133,7 +134,7 @@ final class PieMenuController {
         let dir = -90.0 + stepDeg * Double(mainApps.count + mainActions.count + groupIndex) + stepDeg / 2
         let iconStart = dir - iconSpanDeg / 2
         let iconArc = iconStart...(iconStart + iconSpanDeg)
-        let bgStart = iconStart - (bgSpanDeg - iconSpanDeg) / 2
+        let bgStart = iconStart - bgPadAng
         let bgArc = bgStart...(bgStart + bgSpanDeg)
 
         let win = NSWindow(contentRect: frame, styleMask: .borderless, backing: .buffered, defer: false)
@@ -146,7 +147,8 @@ final class PieMenuController {
             onSelect: { [weak self] app in self?.launchAndClose(app) },
             onAction: { _ in }, onGroup: { _ in },
             onCloseSubmenu: {},
-            arc: iconArc, bgArc: bgArc, radiusOverride: radius, cardSizeOverride: CGFloat(cardSub)))
+            arc: iconArc, bgArc: bgArc, edgePadDeg: edgePadAng, midGapDeg: midGapAng,
+            radiusOverride: radius, cardSizeOverride: CGFloat(cardSub)))
         host.frame = NSRect(origin: .zero, size: frame.size)
         win.contentView = host
         self.submenuWindow = win

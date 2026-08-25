@@ -14,6 +14,8 @@ struct PieMenuContentView: View {
     let onCloseSubmenu: () -> Void
     var arc: ClosedRange<Double>? = nil
     var bgArc: ClosedRange<Double>? = nil
+    var edgePadDeg: Double? = nil
+    var midGapDeg: Double? = nil
     var radiusOverride: CGFloat? = nil
     var cardSizeOverride: CGFloat? = nil
     
@@ -99,12 +101,14 @@ struct PieMenuContentView: View {
                     ArcShape(radius: radius, thickness: bgThick, start: bgRange.lowerBound, end: bgRange.upperBound)
                         .stroke(lp ? AnyShapeStyle(lpColor) : AnyShapeStyle(settings.menuMaterial), style: StrokeStyle(lineWidth: bgThick, lineCap: .round))
                         .frame(width: size, height: size)
+                    let n = Double(max(apps.count, 1))
+                    let iconAng = card / radius * 180 / .pi
+                    let span = arcRange.upperBound - arcRange.lowerBound
+                    let midGap = midGapDeg ?? max(0.1, (span - n * iconAng) / (n + 1))
+                    let edgePad = edgePadDeg ?? midGap
+                    let firstAng = arcRange.lowerBound + edgePad + iconAng / 2
                     ForEach(0..<apps.count, id: \.self) { i in
-                        let span = arcRange.upperBound - arcRange.lowerBound
-                        let n = Double(max(apps.count, 1))
-                        let iconAng = card / radius * 180 / .pi
-                        let gapAng = max(0.1, (span - n * iconAng) / (n + 1))
-                        let ang = arcRange.lowerBound + gapAng + Double(i) * (iconAng + gapAng)
+                        let ang = firstAng + Double(i) * (iconAng + midGap)
                         let rad = ang * .pi / 180
                         let jump = (hovered == i && !lp) ? 6.0 : 0.0
                         let rr = radius + jump
