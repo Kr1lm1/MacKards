@@ -124,7 +124,6 @@ struct PieMenuContentView: View {
                                 if on { haptic() }
                             }
                             .offset(x: cx, y: cy)
-                            .scaleEffect(hovered == i ? settings.hoverScale : 1)
                             .animation(.spring(response: 0.18, dampingFraction: 0.75), value: hovered)
                             .onTapGesture { onSelect(apps[i]) }
                     }
