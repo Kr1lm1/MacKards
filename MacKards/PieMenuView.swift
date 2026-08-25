@@ -42,32 +42,13 @@ struct PieMenuContentView: View {
     }
     
     private func animateIn() {
-        let n = total, lp = settings.lowPower, spd = settings.animSpeed
-        if arc != nil {
-            shown = n; menuScale = 1; menuOpacity = 1
-            withAnimation(.easeOut(duration: 0.12)) { ringVis = true }
-            return
-        }
-        if lp {
+        let n = total
+        if arc == nil {
             shown = n; ringVis = true; menuScale = 1; menuOpacity = 1
             return
         }
-        let base = 0.22 / max(spd, 0.2)
-        switch settings.openAnim {
-        case 1: // bounce
-            shown = n; ringVis = true
-            withAnimation(.spring(response: base * 1.4, dampingFraction: 0.5)) { menuScale = 1; menuOpacity = 1 }
-        default: // stagger
-            withAnimation(.spring(response: 0.18 / max(spd, 0.2), dampingFraction: 0.75)) { ringVis = true }
-            menuScale = 1; menuOpacity = 1
-            var i = 0
-            let interval = max(0.015 / spd, 0.01)
-            Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { t in
-                i += 1
-                withAnimation(.spring(response: 0.14 / max(spd, 0.2), dampingFraction: 0.75)) { shown = i }
-                if i >= n { t.invalidate() }
-            }
-        }
+        shown = n; menuScale = 1; menuOpacity = 1
+        withAnimation(.easeOut(duration: 0.12)) { ringVis = true }
     }
     
     private var pieBody: some View {

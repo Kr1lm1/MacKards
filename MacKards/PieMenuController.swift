@@ -112,7 +112,7 @@ final class PieMenuController {
 
     private func openSubmenu(paths: [String], totalMain: Int, index: Int) {
         if submenuWindow != nil, submenuGroupIndex == index { return }
-        if submenuWindow != nil { closeOldSubmenuImmediately() }
+        let wasOpen = submenuWindow != nil
         submenuGroupIndex = index
         let s = AppSettings.shared
         let apps = paths.prefix(8).compactMap { path -> AppItem? in
@@ -144,11 +144,6 @@ final class PieMenuController {
         let bgStart = iconStart - bgPadAng
         let bgArc = bgStart...(bgStart + bgSpanDeg)
 
-        let win = NSWindow(contentRect: frame, styleMask: .borderless, backing: .buffered, defer: false)
-        win.level = .floating; win.isOpaque = false; win.backgroundColor = .clear
-        win.hasShadow = false; win.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-        win.isReleasedWhenClosed = false
-
         let host = NSHostingView(rootView: PieMenuContentView(
             apps: apps, actions: [], groups: [], settings: s,
             onSelect: { [weak self] app in self?.launchAndClose(app) },
@@ -157,9 +152,19 @@ final class PieMenuController {
             arc: iconArc, bgArc: bgArc, edgePadDeg: edgePadAng, midGapDeg: midGapAng,
             radiusOverride: radius, cardSizeOverride: CGFloat(cardSub)))
         host.frame = NSRect(origin: .zero, size: frame.size)
-        win.contentView = host
-        self.submenuWindow = win
-        win.orderFrontRegardless()
+
+        if wasOpen, let win = submenuWindow {
+            win.contentView = host
+            win.setFrame(frame, display: true, animate: true)
+        } else {
+            let win = NSWindow(contentRect: frame, styleMask: .borderless, backing: .buffered, defer: false)
+            win.level = .floating; win.isOpaque = false; win.backgroundColor = .clear
+            win.hasShadow = false; win.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+            win.isReleasedWhenClosed = false
+            win.contentView = host
+            self.submenuWindow = win
+            win.orderFrontRegardless()
+        }
     }
 
     private func folderContents(_ url: URL) -> [String] {
