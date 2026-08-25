@@ -75,7 +75,6 @@ struct PieMenuContentView: View {
         let ring = settings.menuStyle == 1 && arc == nil
         let thick = settings.ringThickness
         let closing = state.isClosing
-        let subClosing = state.isSubmenuClosing
         let outline = Color.primary.opacity(0.125)
 
         return ZStack {
@@ -113,21 +112,26 @@ struct PieMenuContentView: View {
                             .contentShape(Circle())
                             .onHover { on in
                                 hovered = on ? i : nil
+                                let st = PieMenuState.shared
+                                if on {
+                                    st.hoveredApp = apps[i]; st.hoveredAction = nil
+                                } else if st.hoveredApp?.id == apps[i].id {
+                                    st.hoveredApp = nil
+                                }
                                 if on, settings.haptics {
-                    let styles: [NSHapticFeedbackManager.FeedbackPattern] = [.levelChange, .generic, .alignment]
-                    let style = styles[min(max(settings.hapticStyle, 0), styles.count - 1)]
-                    NSHapticFeedbackManager.defaultPerformer.perform(style, performanceTime: .now)
-                }
+                                    let styles: [NSHapticFeedbackManager.FeedbackPattern] = [.levelChange, .generic, .alignment]
+                                    let style = styles[min(max(settings.hapticStyle, 0), styles.count - 1)]
+                                    NSHapticFeedbackManager.defaultPerformer.perform(style, performanceTime: .now)
+                                }
                             }
                             .offset(x: cx, y: cy)
                             .animation(.spring(response: 0.18, dampingFraction: 0.75), value: hovered)
                             .onTapGesture { onSelect(apps[i]) }
                     }
                 }
-                .scaleEffect(subClosing ? 0.96 : (ringVis ? 1 : 0.96))
-                .opacity(subClosing ? 0 : (ringVis ? 1 : 0))
+                .scaleEffect(ringVis ? 1 : 0.96)
+                .opacity(ringVis ? 1 : 0)
                 .animation(lp ? nil : .easeOut(duration: 0.12), value: ringVis)
-                .animation(lp ? nil : .easeIn(duration: 0.1), value: subClosing)
             }
 
             if arc == nil {

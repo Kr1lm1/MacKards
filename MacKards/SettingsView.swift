@@ -2,79 +2,10 @@ import SwiftUI
 import AppKit
 import UniformTypeIdentifiers
 
-struct ScrollViewHider: NSViewRepresentable {
-    func makeNSView(context: Context) -> NSView { NSView() }
-    func updateNSView(_ nsView: NSView, context: Context) {
-        hide(in: nsView)
-        DispatchQueue.main.async { hide(in: nsView) }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { hide(in: nsView) }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { hide(in: nsView) }
-    }
-    private func hide(in view: NSView) {
-        var scrollView = view.enclosingScrollView
-        if scrollView == nil {
-            var cur: NSView? = view.superview
-            while let v = cur {
-                if let sv = v as? NSScrollView { scrollView = sv; break }
-                cur = v.superview
-            }
-        }
-        guard let sv = scrollView else { return }
-        sv.hasVerticalScroller = false
-        sv.hasHorizontalScroller = false
-        sv.autohidesScrollers = true
-        sv.verticalScroller?.isHidden = true
-        sv.horizontalScroller?.isHidden = true
-    }
-}
-
-struct AnimatedScrollIndicator: ViewModifier {
-    @State private var geo: ScrollGeometry?
-    @State private var show = false
-    @State private var hideTask: Task<Void, Never>?
-
-    func body(content: Content) -> some View {
-        content
-            .scrollIndicators(.hidden, axes: .vertical)
-            .background(ScrollViewHider())
-            .onScrollGeometryChange(for: ScrollGeometry.self, of: { $0 }) { _, new in
-                geo = new
-                withAnimation(.easeInOut(duration: 0.15)) { show = true }
-                hideTask?.cancel()
-                hideTask = Task {
-                    try? await Task.sleep(for: .seconds(1.0))
-                    await MainActor.run {
-                        withAnimation(.easeInOut(duration: 0.3)) { show = false }
-                    }
-                }
-            }
-            .overlay(alignment: .trailing) {
-                if let geo, geo.contentSize.height > geo.containerSize.height + 1 {
-                    GeometryReader { proxy in
-                        let trackH = proxy.size.height
-                        let ratio = geo.containerSize.height / geo.contentSize.height
-                        let thumbH = max(24, trackH * ratio)
-                        let maxOffset = max(1, geo.contentSize.height - geo.containerSize.height)
-                        let progress = min(max(geo.contentOffset.y / maxOffset, 0), 1)
-                        let thumbOffset = progress * (trackH - thumbH)
-
-                        RoundedRectangle(cornerRadius: thumbH / 2)
-                            .fill(Color.primary.opacity(0.4))
-                            .frame(width: 5, height: thumbH)
-                            .position(x: proxy.size.width - 5, y: thumbOffset + thumbH / 2)
-                            .opacity(show ? 1 : 0)
-                            .animation(.easeInOut(duration: 0.2), value: show)
-                    }
-                }
-            }
-    }
-}
-
 struct SettingsView: View {
     @ObservedObject var settings = AppSettings.shared
     @State private var apps: [AppItem] = []
     @State private var tab = 0
-    @State private var appeared = false
     @State private var iconCache: [String: NSImage] = [:]
     
     private func iconFor(_ path: String) -> NSImage {
@@ -107,10 +38,6 @@ struct SettingsView: View {
             .transition(.move(edge: .trailing).combined(with: .opacity))
             .animation(.easeInOut(duration: 0.22), value: tab)
         }
-        .opacity(appeared ? 1 : 0)
-        .offset(x: appeared ? 0 : 24)
-        .animation(.easeOut(duration: 0.28), value: appeared)
-        .onAppear { appeared = true }
         .frame(width: 520, height: 560)
         .onAppear { AppFinder.shared.getApps { apps = $0 } }
     }
@@ -260,7 +187,6 @@ struct SettingsView: View {
                 .frame(maxWidth: .infinity, alignment: .trailing)
             }.padding(18)
         }
-        .modifier(AnimatedScrollIndicator())
     }
 
     private func pickApp(into index: Int) {
@@ -373,9 +299,8 @@ struct SettingsView: View {
         .padding(.horizontal, 2)
         .animation(.easeInOut(duration: 0.2), value: settings.pinnedAppPaths.count)
         .animation(.easeInOut(duration: 0.2), value: settings.pinnedGroups.count)
-        .modifier(AnimatedScrollIndicator())
     }
-    
+
     // MARK: - About
     
     private var aboutTab: some View {

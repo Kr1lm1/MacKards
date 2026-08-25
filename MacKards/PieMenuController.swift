@@ -6,7 +6,6 @@ final class PieMenuState: ObservableObject {
     @Published var hoveredApp: AppItem?
     @Published var hoveredAction: QuickAction?
     @Published var isClosing = false
-    @Published var isSubmenuClosing = false
 }
 
 final class PieMenuController {
@@ -107,7 +106,6 @@ final class PieMenuController {
     private func openSubmenu(group: AppGroup, totalMain: Int, groupIndex: Int) {
         if submenuWindow != nil, submenuGroupIndex == groupIndex { return }
         if submenuWindow != nil { closeOldSubmenuImmediately() }
-        PieMenuState.shared.isSubmenuClosing = false
         submenuGroupIndex = groupIndex
         let s = AppSettings.shared
         let apps = group.paths.prefix(8).compactMap { path -> AppItem? in
@@ -118,11 +116,11 @@ final class PieMenuController {
         let n = max(apps.count, 1)
 
         let mainCard = min((2 * .pi * Double(s.radius)) / Double(max(totalMain, 1)), Double(s.cardSize))
-        let gapSub = Double(s.cardGap) / 4.0
+        let gapSub = 8.0
         let minRadius = s.radius + s.ringThickness + 8
         let gapAng = gapSub / Double(minRadius) * 180 / .pi
         let iconAng = mainCard / Double(minRadius) * 180 / .pi
-        let spanDeg = max(20.0, min(180.0, Double(n + 1) * gapAng + Double(n) * iconAng))
+        let spanDeg = max(40.0, min(240.0, Double(n + 1) * gapAng + Double(n) * iconAng + 30.0))
         let arcLenAvailable = 2 * .pi * Double(minRadius) * (spanDeg / 360.0)
         let cardSub = max(24.0, min(mainCard, (arcLenAvailable - Double(n + 1) * gapSub) / Double(n)))
         let radius = minRadius
@@ -154,22 +152,17 @@ final class PieMenuController {
     }
 
     private func closeOldSubmenuImmediately() {
-        submenuGroupIndex = nil
-        PieMenuState.shared.isSubmenuClosing = false
         guard let win = submenuWindow else { return }
         submenuWindow = nil
+        submenuGroupIndex = nil
         win.orderOut(nil)
     }
 
     private func closeSubmenu() {
-        submenuGroupIndex = nil
         guard let win = submenuWindow else { return }
-        PieMenuState.shared.isSubmenuClosing = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
-            win.orderOut(nil)
-            self.submenuWindow = nil
-            PieMenuState.shared.isSubmenuClosing = false
-        }
+        submenuWindow = nil
+        submenuGroupIndex = nil
+        win.orderOut(nil)
     }
 
     private func cachedIcon(for path: String) -> NSImage {
