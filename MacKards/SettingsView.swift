@@ -11,7 +11,7 @@ struct SettingsView: View {
         if let cached = iconCache[path] { return cached }
         let icon = NSWorkspace.shared.icon(forFile: path)
         icon.size = NSSize(width: 24, height: 24)
-        DispatchQueue.main.async { iconCache[path] = icon }
+        iconCache[path] = icon
         return icon
     }
     
@@ -52,33 +52,16 @@ struct SettingsView: View {
         }.buttonStyle(.plain)
     }
     
-    private func modeBtn(_ title: String, _ idx: Int) -> some View {
-        Button {
-            settings.menuStyle = idx
-        } label: {
+    private func selectBtn(_ title: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
             Text(title)
                 .font(.system(size: 10, weight: .medium))
                 .lineLimit(1)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .contentShape(Rectangle())
-                .background(RoundedRectangle(cornerRadius: 5).fill(settings.menuStyle == idx ? Color.accentColor.opacity(0.15) : Color.primary.opacity(0.04)))
-                .foregroundColor(settings.menuStyle == idx ? .accentColor : .secondary)
-                .overlay(RoundedRectangle(cornerRadius: 5).stroke(settings.menuStyle == idx ? Color.accentColor.opacity(0.3) : Color.primary.opacity(0.1), lineWidth: 0.5))
-        }.buttonStyle(.plain)
-    }
-    
-    private func animBtnSmall(_ title: String, _ idx: Int) -> some View {
-        Button {
-            settings.openAnim = idx
-        } label: {
-            Text(title)
-                .font(.system(size: 10, weight: .medium))
-                .lineLimit(1)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .contentShape(Rectangle())
-                .background(RoundedRectangle(cornerRadius: 5).fill(settings.openAnim == idx ? Color.accentColor.opacity(0.15) : Color.primary.opacity(0.04)))
-                .foregroundColor(settings.openAnim == idx ? .accentColor : .secondary)
-                .overlay(RoundedRectangle(cornerRadius: 5).stroke(settings.openAnim == idx ? Color.accentColor.opacity(0.3) : Color.primary.opacity(0.1), lineWidth: 0.5))
+                .background(RoundedRectangle(cornerRadius: 5).fill(isSelected ? Color.accentColor.opacity(0.15) : Color.primary.opacity(0.04)))
+                .foregroundColor(isSelected ? .accentColor : .secondary)
+                .overlay(RoundedRectangle(cornerRadius: 5).stroke(isSelected ? Color.accentColor.opacity(0.3) : Color.primary.opacity(0.1), lineWidth: 0.5))
         }.buttonStyle(.plain)
     }
     
@@ -91,8 +74,8 @@ struct SettingsView: View {
                 HStack(alignment: .top, spacing: 8) {
                     sectionSmall("Mode", "paintbrush") {
                         HStack(spacing: 6) {
-                            modeBtn("Cards", 0)
-                            modeBtn("Ring", 1)
+                            selectBtn("Cards", isSelected: settings.menuStyle == 0) { settings.menuStyle = 0 }
+                            selectBtn("Ring", isSelected: settings.menuStyle == 1) { settings.menuStyle = 1 }
                         }
                     }
                     
@@ -110,8 +93,13 @@ struct SettingsView: View {
                     
                     sectionSmall("Animation", "play.rectangle.fill") {
                         HStack(spacing: 6) {
-                            animBtnSmall("Wave", 0)
-                            animBtnSmall("Bounce", 1)
+                            if settings.menuStyle == 1 {
+                                selectBtn("Wave", isSelected: settings.ringOpenAnim == 0) { settings.ringOpenAnim = 0 }
+                                selectBtn("Bloom", isSelected: settings.ringOpenAnim == 1) { settings.ringOpenAnim = 1 }
+                            } else {
+                                selectBtn("Wave", isSelected: settings.openAnim == 0) { settings.openAnim = 0 }
+                                selectBtn("Bounce", isSelected: settings.openAnim == 1) { settings.openAnim = 1 }
+                            }
                         }
                     }
                 }
@@ -131,8 +119,11 @@ struct SettingsView: View {
                 // Options
                 section("Options", "slider.horizontal.3") {
                     optionRow("Labels", $settings.showLabels)
-                    optionRow("Pinned apps & folders", $settings.showActions)
-                    optionRow("Submenu", $settings.showSubmenu)
+                    optionRow("Folders & groups", $settings.showActions)
+                    if settings.showActions {
+                        optionRow("Submenu", $settings.showSubmenu)
+                        optionRow("Action icons", $settings.showActionIcons)
+                    }
                     optionRow("Haptics", $settings.haptics)
                     optionRow("Low Power", $settings.lowPower)
                     optionRow("Launch at Login", $settings.launchAtLogin)
@@ -166,96 +157,140 @@ struct SettingsView: View {
     }
     
     // MARK: - Apps
-    
+
     private var appsTab: some View {
         List {
-            // Pinned Apps
             Section {
                 ForEach(Array(settings.pinnedAppPaths.enumerated()), id: \.element) { i, path in
-                    HStack(spacing: 8) {
-                        Image(nsImage: iconFor(path)).resizable().frame(width: 24, height: 24)
-                        Text(String(path.split(separator: "/").last?.dropLast(4) ?? ""))
-                            .font(.system(size: 12)).lineLimit(1)
+                    HStack(spacing: 6) {
+                        Image(nsImage: iconFor(path)).resizable().frame(width: 20, height: 20)
+                        Text(URL(fileURLWithPath: path).deletingPathExtension().lastPathComponent)
+                            .font(.system(size: 11)).lineLimit(1)
                         Spacer()
                         Button { settings.pinnedAppPaths.remove(at: i) } label: {
-                            Image(systemName: "xmark.circle.fill").font(.system(size: 12))
-                                .foregroundColor(.secondary.opacity(0.6))
-                                .frame(width: 22, height: 22).contentShape(Rectangle())
+                            Image(systemName: "xmark").font(.system(size: 10, weight: .medium))
+                                .foregroundColor(.secondary.opacity(0.5))
+                                .frame(width: 18, height: 18).contentShape(Rectangle())
                         }.buttonStyle(.plain)
-                    }.padding(.vertical, 2).contentShape(Rectangle())
+                    }
+                    .padding(.vertical, 1)
+                    .contentShape(Rectangle())
                 }
                 .onMove { from, to in settings.pinnedAppPaths.move(fromOffsets: from, toOffset: to) }
-            } header: {
-                Text("Pinned apps & folders").font(.system(size: 13, weight: .semibold))
-            } footer: {
-                Button {
-                    let panel = NSOpenPanel()
-                    panel.canChooseFiles = true; panel.canChooseDirectories = false
-                    panel.allowsMultipleSelection = true
-                    panel.allowedContentTypes = [.application]
-                    if panel.runModal() == .OK {
-                        for url in panel.urls where url.pathExtension == "app" {
-                            if !settings.pinnedAppPaths.contains(url.path) {
-                                settings.pinnedAppPaths.append(url.path)
-                            }
-                        }
+                ForEach(Array(settings.pinnedFolderPaths.enumerated()), id: \.element) { i, path in
+                    HStack(spacing: 6) {
+                        Image(nsImage: iconFor(path)).resizable().frame(width: 20, height: 20)
+                        Text(URL(fileURLWithPath: path).lastPathComponent)
+                            .font(.system(size: 11)).lineLimit(1)
+                        Spacer()
+                        Button { settings.pinnedFolderPaths.remove(at: i) } label: {
+                            Image(systemName: "xmark").font(.system(size: 10, weight: .medium))
+                                .foregroundColor(.secondary.opacity(0.5))
+                                .frame(width: 18, height: 18).contentShape(Rectangle())
+                        }.buttonStyle(.plain)
                     }
-                } label: {
-                    Label("Add app", systemImage: "plus.circle.fill").font(.system(size: 11)).foregroundColor(.accentColor)
-                }.buttonStyle(.plain).frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, 1)
+                    .contentShape(Rectangle())
+                }
+                .onMove { from, to in settings.pinnedFolderPaths.move(fromOffsets: from, toOffset: to) }
+            } header: {
+                HStack {
+                    Text("pinned apps & folders")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(.secondary)
+                    Spacer()
+                    Button { addPinnedItem() } label: {
+                        Image(systemName: "plus").font(.system(size: 11, weight: .medium))
+                            .foregroundColor(.accentColor)
+                            .frame(width: 18, height: 18).contentShape(Rectangle())
+                    }.buttonStyle(.plain)
+                }
+                .frame(height: 22)
             }
 
-            // Groups
             if settings.showActions {
                 Section {
-                    if settings.pinnedGroups.isEmpty {
-                        Text("No groups. Tap + to create one.").font(.system(size: 11)).foregroundColor(.secondary)
-                    }
                     ForEach(Array(settings.pinnedGroups.enumerated()), id: \.element.id) { idx, group in
                         DisclosureGroup {
-                            VStack(spacing: 4) {
+                            VStack(spacing: 3) {
                                 ForEach(group.paths.indices, id: \.self) { i in
                                     let path = group.paths[i]
-                                    HStack(spacing: 6) {
-                                        Image(nsImage: iconFor(path)).resizable().frame(width: 18, height: 18)
+                                    HStack(spacing: 5) {
+                                        Image(nsImage: iconFor(path)).resizable().frame(width: 16, height: 16)
                                         Text(URL(fileURLWithPath: path).deletingPathExtension().lastPathComponent).font(.system(size: 10)).lineLimit(1)
                                         Spacer()
                                         Button { settings.pinnedGroups[idx].paths.remove(at: i) } label: {
-                                            Image(systemName: "xmark.circle.fill").font(.system(size: 10)).foregroundColor(.secondary.opacity(0.5))
+                                            Image(systemName: "xmark").font(.system(size: 9, weight: .medium))
+                                                .foregroundColor(.secondary.opacity(0.4))
+                                                .frame(width: 16, height: 16).contentShape(Rectangle())
                                         }.buttonStyle(.plain)
                                     }
                                 }
                                 Button { pickApp(into: idx) } label: {
-                                    Label("Add app", systemImage: "plus.circle.fill").font(.system(size: 10)).foregroundColor(.accentColor)
+                                    HStack(spacing: 3) {
+                                        Image(systemName: "plus").font(.system(size: 9))
+                                        Text("Add app").font(.system(size: 10))
+                                    }.foregroundColor(.accentColor)
                                 }.buttonStyle(.plain).frame(maxWidth: .infinity, alignment: .leading)
-                            }.padding(.vertical, 4)
+                            }.padding(.vertical, 3)
                         } label: {
-                            HStack(spacing: 6) {
-                                Image(systemName: "square.grid.2x2.fill").font(.system(size: 11)).foregroundColor(.accentColor)
+                            HStack(spacing: 5) {
+                                Image(systemName: "square.grid.2x2.fill").font(.system(size: 10)).foregroundColor(.accentColor)
                                 TextField("Group name", text: $settings.pinnedGroups[idx].name)
                                     .font(.system(size: 11, weight: .medium))
                                     .lineLimit(1)
                                     .textFieldStyle(.plain)
                                 Spacer()
+                                Text("\(group.paths.count)").font(.system(size: 10)).foregroundColor(.secondary)
                                 Button { settings.pinnedGroups.remove(at: idx) } label: {
-                                    Image(systemName: "xmark.circle.fill").font(.system(size: 10)).foregroundColor(.secondary.opacity(0.5))
+                                    Image(systemName: "xmark").font(.system(size: 10, weight: .medium))
+                                        .foregroundColor(.secondary.opacity(0.4))
+                                        .frame(width: 16, height: 16).contentShape(Rectangle())
                                 }.buttonStyle(.plain)
                             }
                         }
                     }
-                    Button {
-                        settings.pinnedGroups.append(AppGroup(name: "New Group", paths: []))
-                    } label: {
-                        Label("New Group", systemImage: "plus.circle.fill").font(.system(size: 11))
-                    }.buttonStyle(.plain).frame(maxWidth: .infinity, alignment: .leading)
                 } header: {
-                    Text("Groups").font(.system(size: 13, weight: .semibold))
+                    HStack {
+                        Text("Groups")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundColor(.secondary)
+                        Spacer()
+                        Button { settings.pinnedGroups.append(AppGroup(name: "Group", paths: [])) } label: {
+                            Image(systemName: "plus").font(.system(size: 11, weight: .medium))
+                                .foregroundColor(.accentColor)
+                                .frame(width: 18, height: 18).contentShape(Rectangle())
+                        }.buttonStyle(.plain)
+                    }
+                    .frame(height: 22)
                 }
             }
         }
         .listStyle(.plain)
-        .environment(\.defaultMinListRowHeight, 30)
+        .listRowSeparator(.hidden)
+        .environment(\.defaultMinListRowHeight, 26)
         .padding(.horizontal, 2)
+    }
+
+    private func addPinnedItem() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = true
+        panel.allowedContentTypes = [.application, .folder]
+        if panel.runModal() == .OK {
+            for url in panel.urls {
+                if url.pathExtension == "app" {
+                    if !settings.pinnedAppPaths.contains(url.path) {
+                        settings.pinnedAppPaths.append(url.path)
+                    }
+                } else if url.hasDirectoryPath {
+                    if !settings.pinnedFolderPaths.contains(url.path) {
+                        settings.pinnedFolderPaths.append(url.path)
+                    }
+                }
+            }
+        }
     }
 
     // MARK: - About

@@ -17,8 +17,13 @@ struct QuickAction: Identifiable {
         guard let target = targetURL else { return }
         for provider in providers {
             provider.loadItem(forTypeIdentifier: "public.file-url", options: nil) { item, _ in
-                guard let data = item as? Data,
-                      let src = URL(dataRepresentation: data, relativeTo: nil) else { return }
+                let src: URL? = {
+                    if let data = item as? Data { return URL(dataRepresentation: data, relativeTo: nil) }
+                    if let url = item as? URL { return url }
+                    if let url = item as? NSURL { return url as URL }
+                    return nil
+                }()
+                guard let src else { return }
                 DispatchQueue.main.async {
                     let fm = FileManager.default
                     let dest = target.appendingPathComponent(src.lastPathComponent)
@@ -60,7 +65,10 @@ struct QuickAction: Identifiable {
             folder("desktop", "Desktop", "desktopcomputer", desktop),
             folder("home", "Home", "house.fill", home),
             folder("applications", "Apps", "square.grid.2x2.fill", URL(fileURLWithPath: "/Applications")),
-            folder("trash", "Trash", "trash", trash),
+            .init(id: "trash", name: "Trash", icon: "trash", targetURL: trash, folderImage: nil) {
+                guard let url = trash else { return }
+                NSWorkspace.shared.open(url)
+            },
             folder("icloud", "iCloud", "icloud.fill", fm.fileExists(atPath: iCloud.path) ? iCloud : home),
         ]
     }()

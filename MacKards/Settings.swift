@@ -17,11 +17,13 @@ final class AppSettings: ObservableObject {
     @Published var ringThickness: CGFloat { didSet { d.set(Double(ringThickness), forKey: "rt") } }
     @Published var showLabels: Bool { didSet { d.set(showLabels, forKey: "sl") } }
     @Published var showActions: Bool { didSet { d.set(showActions, forKey: "sa") } }
+    @Published var showActionIcons: Bool { didSet { d.set(showActionIcons, forKey: "sai") } }
     @Published var showSubmenu: Bool { didSet { d.set(showSubmenu, forKey: "ss") } }
     @Published var haptics: Bool { didSet { d.set(haptics, forKey: "hp") } }
     @Published var hapticStyle: Int { didSet { d.set(hapticStyle, forKey: "hps") } } // 0=light 1=medium 2=strong
     @Published var lowPower: Bool { didSet { d.set(lowPower, forKey: "lp") } }
     @Published var openAnim: Int { didSet { d.set(openAnim, forKey: "oa") } } // 0=stagger 1=bounce
+    @Published var ringOpenAnim: Int { didSet { d.set(ringOpenAnim, forKey: "roa") } } // 0=wave 1=bloom
     @Published var launchAtLogin: Bool {
         didSet {
             d.set(launchAtLogin, forKey: "lal")
@@ -61,10 +63,17 @@ final class AppSettings: ObservableObject {
         else if savedAnim == 2 { savedAnim = 0 } // old fade -> stagger
         else if savedAnim == 3 { savedAnim = 1 } // old bounce -> bounce
         openAnim = min(savedAnim, 1)
+        ringOpenAnim = min(max(d.object(forKey: "roa") == nil ? 0 : d.integer(forKey: "roa"), 0), 1)
         launchAtLogin = d.bool(forKey: "lal")
         hotkeyMod1 = min(max(d.object(forKey: "hm1") == nil ? 0 : d.integer(forKey: "hm1"), 0), 3)
         hotkeyMod2 = min(max(d.object(forKey: "hm2") == nil ? 2 : d.integer(forKey: "hm2"), 0), 3)
-        enabledActions = d.stringArray(forKey: "ea") ?? ["downloads","documents","desktop","trash"]
+        let savedEnabledActions = d.stringArray(forKey: "ea") ?? ["trash"]
+        if d.object(forKey: "sai") == nil {
+            showActionIcons = savedEnabledActions.contains("trash")
+        } else {
+            showActionIcons = d.bool(forKey: "sai")
+        }
+        enabledActions = savedEnabledActions.filter { $0 != "trash" }
         pinnedAppPaths = d.stringArray(forKey: "pa") ?? Self.defaultApps()
         pinnedFolderPaths = d.stringArray(forKey: "pf") ?? []
         pinnedGroups = (d.data(forKey: "pg")).flatMap { try? JSONDecoder().decode([AppGroup].self, from: $0) } ?? []
@@ -72,8 +81,8 @@ final class AppSettings: ObservableObject {
     }
     
     func resetToDefaults() {
-        radius=90;cardSize=72;hoverScale=1.2;iconScale=0.7;animSpeed=2.0;menuStyle=1;cardGap=0;ringThickness=64;showLabels=true;showActions=true;showSubmenu=true;haptics=true;hapticStyle=1;lowPower=false;openAnim=0;launchAtLogin=false;hotkeyMod1=0;hotkeyMod2=2
-        enabledActions=["downloads","documents","desktop","trash"]
+        radius=90;cardSize=72;hoverScale=1.2;iconScale=0.7;animSpeed=2.0;menuStyle=1;cardGap=0;ringThickness=64;showLabels=true;showActions=true;showActionIcons=true;showSubmenu=true;haptics=true;hapticStyle=1;lowPower=false;openAnim=0;ringOpenAnim=0;launchAtLogin=false;hotkeyMod1=0;hotkeyMod2=2
+        enabledActions=[]
         pinnedAppPaths=Self.defaultApps()
         pinnedFolderPaths=[]
         pinnedGroups=[]

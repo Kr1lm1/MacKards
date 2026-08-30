@@ -8,6 +8,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var localMonitor: Any?
     private var settingsWindow: NSWindow?
     private var holding = false
+    private var lastTarget: NSEvent.ModifierFlags?
     
     func applicationDidFinishLaunching(_ notification: Notification) {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
@@ -39,11 +40,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     private func registerMonitors() {
+        let target = AppSettings.shared.hotkeyModifiers
+        guard lastTarget != target else { return }
+        lastTarget = target
         if let m = globalMonitor { NSEvent.removeMonitor(m) }
         if let m = localMonitor { NSEvent.removeMonitor(m) }
         holding = false
         
-        let target = AppSettings.shared.hotkeyModifiers
         globalMonitor = NSEvent.addGlobalMonitorForEvents(matching: .flagsChanged) { [weak self] e in
             self?.checkFlags(e.modifierFlags, target)
         }
